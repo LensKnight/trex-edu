@@ -23,7 +23,6 @@ export default function RootLayout({
   return (
     <html lang="en" style={{fontSize: "14px", fontFamily: "'DM Sans', sans-serif"}}>
       <body className="bg-black text-white">
-        <Navbar />
         <div className="flex">
           {!hideSidebar && (
             <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
