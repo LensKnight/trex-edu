@@ -21,6 +21,7 @@ export default function ChatPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [profileCache, setProfileCache] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -134,6 +135,14 @@ export default function ChatPage() {
 
     setText("");
   }
+
+  if (loading)
+    return (
+      <div className="loading-screen">
+        <img src="/toggle-icon.png" className="loading-x" alt="loading" />
+        <div className="loading-text">Loading Chat</div>
+      </div>
+    );
 
   // ---------------- UI ----------------
   return (

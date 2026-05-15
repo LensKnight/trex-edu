@@ -89,17 +89,70 @@ export default function DashboardPage() {
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    const fileName = deleteTarget.file_url.split("/materials/")[1];
-    await supabase.storage.from("materials").remove([fileName]);
-    await supabase.from("notes").delete().eq("id", deleteTarget.id);
-    const { data: profileData } = await supabase.from("profiles").select("xp").eq("id", session!.user.id).single();
-    const newXp = Math.max((profileData?.xp || 0) - 20, 0);
-    await supabase.from("profiles").update({ xp: newXp }).eq("id", session!.user.id);
-    setNotes((prev) => prev.filter((n) => n.id !== deleteTarget.id));
-    setNotesCount((prev) => prev - 1);
-    setTotalLikes((prev) => prev - (deleteTarget.likes || 0));
-    setXp(newXp);
-    setDeleteTarget(null);
+
+    try {
+      // 1️⃣ Extract file path safely
+      let fileName = "";
+
+      if (deleteTarget.file_url?.includes("/materials/")) {
+        fileName = deleteTarget.file_url.split("/materials/")[1];
+      }
+
+      // 2️⃣ Delete from Supabase Storage (if exists)
+      if (fileName) {
+        const { error: storageError } = await supabase.storage
+          .from("materials")
+          .remove([fileName]);
+
+        if (storageError) {
+          console.log("Storage delete error:", storageError.message);
+          // don’t stop flow — continue DB cleanup
+        }
+      }
+
+      // 3️⃣ Delete from DB
+      const { error: dbError } = await supabase
+        .from("notes")
+        .delete()
+        .eq("id", deleteTarget.id);
+
+      if (dbError) {
+        console.log("DB delete error:", dbError.message);
+        return alert("Delete failed: " + dbError.message);
+      }
+
+      // 4️⃣ XP deduction (safe)
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("xp")
+        .eq("id", session!.user.id)
+        .single();
+
+      const newXp = Math.max((profileData?.xp || 0) - 20, 0);
+
+      await supabase
+        .from("profiles")
+        .update({ xp: newXp })
+        .eq("id", session!.user.id);
+
+      // 5️⃣ UI update (instant)
+      setNotes((prev) =>
+        prev.filter((n) => n.id !== deleteTarget.id)
+      );
+
+      setNotesCount((prev) => prev - 1);
+
+      setTotalLikes((prev) =>
+        prev - (deleteTarget.likes || 0)
+      );
+
+      setXp(newXp);
+
+      setDeleteTarget(null);
+    } catch (err) {
+      console.log("Delete crash:", err);
+      alert("Something went wrong while deleting");
+    }
   }
 
   if (loading) return (
