@@ -69,7 +69,7 @@ export default function ProfilePage() {
         <button
           onClick={() => router.push("/dashboard")}
           className="w-full p-3 rounded-2xl text-white font-bold transition-all duration-300 hover:scale-105 flex items-center justify-center mt-4"
-          style={{ background: "linear-gradient(135deg, #6b0000, #3d0000)" }}
+          style={{ background: "linear-gradient(135deg, #9b0000, #3d0000)" }}
         >
           Go to Dashboard
         </button>

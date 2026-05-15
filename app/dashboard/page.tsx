@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../src/lib/supabase";
 import useAuth from "../../src/hooks/useAuth";
+import { useTheme } from "../../src/context/ThemeContext";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 type Note = {
@@ -20,6 +21,7 @@ type LeaderboardEntry = {
 
 export default function DashboardPage() {
   const { session, loading } = useAuth();
+  const { darkMode, setDarkMode } = useTheme();
   const [notesCount, setNotesCount] = useState(0);
   const [xp, setXp] = useState(0);
   const [totalLikes, setTotalLikes] = useState(0);
@@ -30,56 +32,55 @@ export default function DashboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
 
-  const subjects = [
-    "Physics",
-    "Chemistry",
-    "Mathematics",
-    "Computer Science",
-    "English",
-    "Physical Education",
-  ];
+  const subjects = ["Physics","Chemistry","Mathematics","Computer Science","English","Physical Education"];
+
+  const bg = darkMode ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)" : "linear-gradient(135deg, #fff5f5 0%, #ffe4e4 40%, #ffffff 100%)";
+  const textColor = darkMode ? "#ffffff" : "#1a0000";
+  const subTextColor = darkMode ? "#a1a1aa" : "#8b0000";
+ const cardBg = darkMode ? "linear-gradient(135deg, #6b1a1a, #2d0a0a)" : "linear-gradient(135deg, #ffcccc, #ffb3b3)";
+  const cardBg2 = darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.10)";
+  const noteBg = darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.08)";
+  const border = darkMode ? "1px solid #3f0000" : "1px solid #ffb3b3";
 
   useEffect(() => {
-    if (!loading && session) {
-      fetchStats();
-      fetchLeaderboard();
-    }
+    if (!loading && session) { fetchStats(); fetchLeaderboard(); }
   }, [loading, session]);
 
   async function fetchStats() {
-    const { data: notesData } = await supabase
-      .from("notes")
-      .select("*")
-      .eq("uploader_id", session!.user.id);
-
+    const { data: notesData } = await supabase.from("notes").select("*").eq("uploader_id", session!.user.id);
     if (notesData) {
       setNotes(notesData);
       setNotesCount(notesData.length);
       setTotalLikes(notesData.reduce((sum, n) => sum + (n.likes || 0), 0));
-
-      // Chart data — subject wise notes count
-      const subjectCount = subjects.map((s) => ({
-        subject: s.split(" ")[0], // short naam
-        notes: notesData.filter((n) => n.subject === s).length,
-      })).filter((s) => s.notes > 0);
-      setChartData(subjectCount);
+      setChartData(subjects.map((s) => ({ subject: s.split(" ")[0], notes: notesData.filter((n) => n.subject === s).length })).filter((s) => s.notes > 0));
     }
-
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("xp, full_name")
-      .eq("id", session!.user.id)
-      .single();
-
+    const { data: profileData } = await supabase.from("profiles").select("xp, full_name").eq("id", session!.user.id).single();
     setXp(profileData?.xp || 0);
-    const full = profileData?.full_name || "";
-    setFullName(full.split(" ")[0]);
+    setFullName((profileData?.full_name || "").split(" ")[0]);
   }
 
   async function fetchLeaderboard() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    // get current user's section
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("section, class_name")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile) return;
+
+    // fetch ONLY same section + class leaderboard
     const { data } = await supabase
       .from("profiles")
       .select("full_name, xp")
+      .eq("class_name", profile.class_name)
+      .eq("section", profile.section)
       .order("xp", { ascending: false })
       .limit(5);
 
@@ -88,20 +89,12 @@ export default function DashboardPage() {
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-
     const fileName = deleteTarget.file_url.split("/materials/")[1];
-    const { error: storageError } = await supabase.storage.from("materials").remove([fileName]);
-    console.log("storageError:", storageError);
-
-    const { error: dbError } = await supabase.from("notes").delete().eq("id", deleteTarget.id);
-    console.log("dbError:", dbError);
-
-    const { data: profileData } = await supabase
-      .from("profiles").select("xp").eq("id", session!.user.id).single();
-
+    await supabase.storage.from("materials").remove([fileName]);
+    await supabase.from("notes").delete().eq("id", deleteTarget.id);
+    const { data: profileData } = await supabase.from("profiles").select("xp").eq("id", session!.user.id).single();
     const newXp = Math.max((profileData?.xp || 0) - 20, 0);
     await supabase.from("profiles").update({ xp: newXp }).eq("id", session!.user.id);
-
     setNotes((prev) => prev.filter((n) => n.id !== deleteTarget.id));
     setNotesCount((prev) => prev - 1);
     setTotalLikes((prev) => prev - (deleteTarget.likes || 0));
@@ -112,66 +105,78 @@ export default function DashboardPage() {
   if (loading) return (
     <div className="loading-screen">
       <img src="/toggle-icon.png" className="loading-x" alt="loading" />
-      <div className="loading-text">Loading</div>
+      <div className="loading-text">Loading Dashboard</div>
     </div>
   );
 
   return (
-    <div className="flex text-white min-h-screen" style={{background: "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"}}>
+    <div className="flex min-h-screen transition-all duration-500" style={{background: bg, color: textColor}}>
       <div className="flex-1 p-8">
-        <h1 className="text-5xl font-bold mb-8">Welcome, <span className="glow-text">{fullName}</span> 👋</h1>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <p className="text-sm font-medium tracking-widest uppercase mb-1" style={{color: subTextColor}}>Student Dashboard</p>
+            <h1 className="text-5xl font-bold">Welcome back, <span className="glow-text">{fullName}</span> 👋</h1>
+            <div className="mt-2 h-0.5 w-24 rounded-full" style={{background: "linear-gradient(90deg, #8b0000, transparent)"}}></div>
+          </div>
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="px-4 py-2 rounded-2xl font-bold transition-all duration-300 hover:scale-105"
+            style={{background: darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", color: textColor}}
+          >
+            {darkMode ? "☀️" : "🌙"}
+          </button>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-6 mb-12">
-          <div className="shine-effect p-6 rounded-3xl hover:scale-105 transition-all duration-300" style={{background: "linear-gradient(135deg, #6b1a1a, #2d0a0a)"}}>
-            <h2 className="text-zinc-400 mb-2">Notes Uploaded</h2>
-            <p className="text-4xl font-bold">{notesCount}</p>
-          </div>
-          <div className="shine-effect p-6 rounded-3xl hover:scale-105 transition-all duration-300" style={{background: "linear-gradient(135deg, #6b1a1a, #2d0a0a)"}}>
-            <h2 className="text-zinc-400 mb-2">XP Earned</h2>
-            <p className="text-4xl font-bold">{xp}</p>
-          </div>
-          <div className="shine-effect p-6 rounded-3xl hover:scale-105 transition-all duration-300" style={{background: "linear-gradient(135deg, #6b1a1a, #2d0a0a)"}}>
-            <h2 className="text-zinc-400 mb-2">Total Likes</h2>
-            <p className="text-4xl font-bold">{totalLikes}</p>
-          </div>
+          {[
+            { label: "Notes Uploaded", value: notesCount, icon: "📄" },
+            { label: "XP Earned", value: xp, icon: "⚡" },
+            { label: "Total Likes", value: totalLikes, icon: "❤️" },
+          ].map((stat) => (
+            <div key={stat.label} className="shine-effect p-6 rounded-3xl hover:scale-105 transition-all duration-300" style={{background: cardBg}}>
+              <div className="flex items-center gap-2 mb-2">
+                <span>{stat.icon}</span>
+                <h2 style={{color: subTextColor}}>{stat.label}</h2>
+              </div>
+              <p className="text-4xl font-bold">{stat.value}</p>
+            </div>
+          ))}
         </div>
 
         {/* Leaderboard + Chart */}
         <div className="grid grid-cols-2 gap-6 mb-12">
-
-          {/* Leaderboard */}
-          <div className="bg-zinc-900 p-6 rounded-3xl hover:bg-zinc-800 hover:scale-105 transition-all duration-300">
-            <h2 className="text-2xl font-bold mb-4">🏆 Leaderboard</h2>
+          <div className="shine-effect p-6 rounded-3xl hover:scale-103 transition-all duration-300" style={{background: cardBg}}>
+            <h2 className="text-2xl font-bold mb-2">🏆 Leaderboard</h2>
+            <p className="text-sm mt-1" style={{color: subTextColor}}> ⓘ Don’t worry if there’s a small calculation error. Any missing points will be verified & added soon! </p>
             <div className="space-y-3">
               {leaderboard.map((user, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-2xl" style={{background: "rgba(255,255,255,0.03)"}}>
+                <div key={index} className="flex items-center justify-between p-3 rounded-2xl" style={{background: noteBg}}>
                   <div className="flex items-center gap-3">
-                    <span className="text-lg font-bold" style={{color: index === 0 ? "#FFD700" : index === 1 ? "#C0C0C0" : index === 2 ? "#CD7F32" : "#888"}}>
-                      #{index + 1}
-                    </span>
+                    <span className="text-lg font-bold" style={{color: index === 0 ? "#FFD700" : index === 1 ? "#C0C0C0" : index === 2 ? "#CD7F32" : "#888"}}>#{index + 1}</span>
                     <span className="font-medium">{user.full_name}</span>
                   </div>
-                  <span className="text-red-400 font-bold">{user.xp} XP</span>
+                  <span className="font-bold" style={{color: "#ff6666"}}>{user.xp} XP</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Chart */}
-          <div className="bg-zinc-900 p-6 rounded-3xl hover:bg-zinc-800 hover:scale-105 transition-all duration-300">
+          <div className="shine-effect p-6 rounded-3xl hover:scale-103 transition-all duration-300" style={{background: cardBg}}>
             <h2 className="text-2xl font-bold mb-4">📊 Notes by Subject</h2>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={chartData}>
-                  <XAxis dataKey="subject" tick={{fill: "#888", fontSize: 12}} />
-                  <YAxis tick={{fill: "#888", fontSize: 12}} />
-                  <Tooltip contentStyle={{background: "#1a0000", border: "1px solid #3f0000", borderRadius: "12px"}} />
-                  <Bar dataKey="notes" fill="#6b0000" radius={[6, 6, 0, 0]} />
+                  <XAxis dataKey="subject" tick={{fill: darkMode ? "#888" : "#8b0000", fontSize: 12}} />
+                  <YAxis tick={{fill: darkMode ? "#888" : "#8b0000", fontSize: 12}} />
+                  <Tooltip contentStyle={{background: darkMode ? "#1a0000" : "#fff5f5", border: "1px solid #8b0000", borderRadius: "12px", color: textColor}} />
+                  <Bar dataKey="notes" fill={darkMode ? "#6b0000" : "#ff6666"} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-zinc-500 text-sm mt-4">No notes available</p>
+              <p className="text-sm mt-4" style={{color: subTextColor}}>No notes available</p>
             )}
           </div>
         </div>
@@ -183,34 +188,23 @@ export default function DashboardPage() {
             const subjectNotes = notes.filter((n) => n.subject === subject);
             if (subjectNotes.length === 0) return null;
             const isOpen = openSubject === subject;
-
             return (
-              <div key={subject} className="bg-zinc-900 rounded-3xl overflow-hidden">
-                <button
-                  onClick={() => setOpenSubject(isOpen ? null : subject)}
-                  className="w-full flex items-center justify-between p-5 hover:bg-zinc-800 transition"
-                >
+              <div key={subject} className="rounded-3xl overflow-hidden transition-all duration-300" style={{background: cardBg2, border}}>
+                <button onClick={() => setOpenSubject(isOpen ? null : subject)} className="w-full flex items-center justify-between p-5 transition hover:opacity-80">
                   <span className="text-xl font-bold">{subject}</span>
-                  <span className="text-zinc-400 text-sm">{subjectNotes.length} notes {isOpen ? "▲" : "▼"}</span>
+                  <span className="text-sm" style={{color: subTextColor}}>{subjectNotes.length} notes {isOpen ? "▲" : "▼"}</span>
                 </button>
-
                 {isOpen && (
                   <div className="px-5 pb-5 space-y-3">
                     {subjectNotes.map((note) => (
-                      <div key={note.id} className="bg-zinc-800 p-4 rounded-2xl flex items-center justify-between">
+                      <div key={note.id} className="p-4 rounded-2xl flex items-center justify-between" style={{background: noteBg}}>
                         <div>
                           <p className="font-bold">{note.title}</p>
-                          <p className="text-zinc-400 text-xs mt-1">❤️ {note.likes || 0} likes</p>
+                          <p className="text-xs mt-1" style={{color: subTextColor}}>❤️ {note.likes || 0} likes</p>
                         </div>
                         <div className="flex gap-3">
-                          <a href={note.file_url} target="_blank" className="bg-blue-600 px-3 py-2 rounded-xl text-sm hover:bg-blue-700 scale-105 transition-all duration-300" >
-                            Open
-                          </a>
-                          <button
-                            onClick={() => setDeleteTarget(note)}
-                            className="bg-red-600 px-3 py-2 rounded-xl text-sm hover:bg-red-700 hover:scale-105 transition-all duration-300">
-                            Delete
-                          </button>
+                          <a href={note.file_url} target="_blank" className="px-3 py-2 rounded-xl text-sm transition hover:scale-105" style={{background: darkMode ? "#1e3a5f" : "#dbeafe", color: darkMode ? "#fff" : "#1e3a5f"}}>Open</a>
+                          <button onClick={() => setDeleteTarget(note)} className="bg-red-600 px-3 py-2 rounded-xl text-sm hover:bg-red-700 hover:scale-105 transition-all duration-300 text-white">Delete</button>
                         </div>
                       </div>
                     ))}
@@ -224,25 +218,15 @@ export default function DashboardPage() {
 
       {deleteTarget && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 p-8 rounded-3xl w-96 text-center">
+          <div className="p-8 rounded-3xl w-96 text-center" style={{background: darkMode ? "#1a0000" : "#fff5f5", color: textColor}}>
             <p className="text-4xl mb-4">🗑️</p>
             <h2 className="text-2xl font-bold mb-2">Delete Note?</h2>
-            <p className="text-zinc-400 mb-2">This will be deleted permanently</p>
-            <p className="text-zinc-400 text-sm mb-2">20XP will be deducted</p>
-            <p className="text-white font-bold mb-6">"{deleteTarget.title}"</p>
+            <p className="mb-2" style={{color: subTextColor}}>This will be deleted permanently</p>
+            <p className="text-sm mb-2" style={{color: subTextColor}}>20XP will be deducted</p>
+            <p className="font-bold mb-6">"{deleteTarget.title}"</p>
             <div className="flex gap-4">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 bg-zinc-700 p-3 rounded-2xl hover:bg-zinc-600 hover:scale-105 transition-all duration-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="flex-1 bg-red-600 p-3 rounded-2xl hover:bg-red-700 hover:scale-105 transition-all duration-300"
-              >
-                Delete
-              </button>
+              <button onClick={() => setDeleteTarget(null)} className="flex-1 p-3 rounded-2xl hover:scale-105 transition-all duration-300 font-bold" style={{background: darkMode ? "#3f3f3f" : "#e5e5e5", color: textColor}}>Cancel</button>
+              <button onClick={confirmDelete} className="flex-1 bg-red-600 p-3 rounded-2xl hover:bg-red-700 hover:scale-105 transition-all duration-300 font-bold text-white">Delete</button>
             </div>
           </div>
         </div>

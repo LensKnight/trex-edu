@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "../src/context/ThemeContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../src/lib/supabase";
@@ -31,6 +32,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     { href: "/dashboard", label: "Dashboard", icon: "⚡" },
     { href: "/upload", label: "Upload Notes", icon: "📤" },
     { href: "/feed", label: "Notes Feed", icon: "📚" },
+    { href: "/classmates", label: "Classmates", icon: "👥" },
+    { href: "/chat", label: "Class Chat", icon: "💬" },
   ];
 
   return (
