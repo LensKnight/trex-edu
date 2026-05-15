@@ -11,7 +11,8 @@ type Message = {
   profiles?: {
     full_name: string;
     username: string;
-  };
+  }[]
+  |null;
 };
 
 export default function ChatPage() {
@@ -112,7 +113,7 @@ export default function ChatPage() {
       .eq("section", section)
       .order("created_at", { ascending: true });
 
-    setMessages((data as Message[]) || []);
+    setMessages((data || []) as unknown as Message[]);
   }
 
   // ---------------- SEND MESSAGE ----------------
@@ -177,7 +178,7 @@ export default function ChatPage() {
                   {/* NAME */}
                   {!isMe && (
                     <p className="text-xs text-gray-300 mb-1 opacity-80">
-                      {msg.profiles?.full_name ||
+                      {msg.profiles?.[0]?.full_name ||
                         profileCache[msg.user_id]?.full_name ||
                         "Student"}
                     </p>
