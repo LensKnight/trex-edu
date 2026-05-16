@@ -35,32 +35,32 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white">
-      <div className="bg-zinc-900 p-8 rounded-2xl w-96">
+      <div className="min-h-screen flex items-center justify-center text-white" style={{background: "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"}}>
+        <div className="p-8 rounded-2xl w-96" style={{background: "rgba(255,255,255,0.04)", border: "1px solid #3f0000"}}>
         <h1 className="text-3xl font-bold mb-6 text-center">My Profile</h1>
 
         <div className="space-y-4">
-          <div className="bg-zinc-800 p-4 rounded-xl">
+          <div className="p-4 rounded-xl" style={{background: "rgba(255,255,255,0.06)", border: "1px solid #3f0000"}}>
             <p className="text-zinc-400 text-xs mb-1">Full Name</p>
             <p className="text-white font-bold">{profile.full_name}</p>
           </div>
-          <div className="bg-zinc-800 p-4 rounded-xl">
+          <div className="p-4 rounded-xl" style={{background: "rgba(255,255,255,0.06)", border: "1px solid #3f0000"}}>
             <p className="text-zinc-400 text-xs mb-1">Class</p>
             <p className="text-white font-bold">{profile.class_name}</p>
           </div>
-          <div className="bg-zinc-800 p-4 rounded-xl">
+          <div className="p-4 rounded-xl" style={{background: "rgba(255,255,255,0.06)", border: "1px solid #3f0000"}}>
             <p className="text-zinc-400 text-xs mb-1">Stream</p>
             <p className="text-white font-bold">{profile.stream}</p>
           </div>
-          <div className="bg-zinc-800 p-4 rounded-xl">
+          <div className="p-4 rounded-xl" style={{background: "rgba(255,255,255,0.06)", border: "1px solid #3f0000"}}>
             <p className="text-zinc-400 text-xs mb-1">Section</p>
             <p className="text-white font-bold">{profile.section}</p>
           </div>
-          <div className="bg-zinc-800 p-4 rounded-xl">
+          <div className="p-4 rounded-xl" style={{background: "rgba(255,255,255,0.06)", border: "1px solid #3f0000"}}>
             <p className="text-zinc-400 text-xs mb-1">Roll No</p>
             <p className="text-white font-bold">{profile.roll_no}</p>
           </div>
-          <div className="bg-zinc-800 p-4 rounded-xl">
+          <div className="p-4 rounded-xl" style={{background: "rgba(255,255,255,0.06)", border: "1px solid #3f0000"}}>
             <p className="text-zinc-400 text-xs mb-1">XP Earned</p>
             <p className="text-white font-bold">{profile.xp} XP</p>
           </div>

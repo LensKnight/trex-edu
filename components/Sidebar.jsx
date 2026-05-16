@@ -34,6 +34,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     { href: "/feed", label: "Notes Feed", icon: "📚" },
     { href: "/classmates", label: "Classmates", icon: "👥" },
     { href: "/chat", label: "Class Chat", icon: "💬" },
+    { href: "/announcements", label: "Announcements", icon: "📢" },
   ];
 
   return (

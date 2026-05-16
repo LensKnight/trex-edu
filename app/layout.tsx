@@ -1,5 +1,6 @@
 "use client";
 
+import AnnouncementBanner from "../components/AnnouncementBanner";
 import ThemedBody from "./ThemedBody";
 import { ThemeProvider } from "../src/context/ThemeContext";
 import "./globals.css";

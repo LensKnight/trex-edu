@@ -5,7 +5,6 @@ import { supabase } from "../../src/lib/supabase";
 import { useRouter } from "next/navigation";
 import useAuth from "../../src/hooks/useAuth";
 import { useTheme } from "../../src/context/ThemeContext";
-import { clear } from "console";
 
 export default function UploadPage() {
   const { loading } = useAuth();
