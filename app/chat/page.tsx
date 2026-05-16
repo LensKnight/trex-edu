@@ -29,6 +29,7 @@ export default function ChatPage() {
   useEffect(() => {
     init();
 
+
     const channel = supabase
       .channel("chat-room")
       .on(
@@ -94,6 +95,7 @@ export default function ChatPage() {
     setProfileCache(map);
 
     fetchMessages(profileData.class_name, profileData.section);
+    setLoading(false);
   }
 
   // ---------------- FETCH MESSAGES ----------------
@@ -143,6 +145,7 @@ export default function ChatPage() {
         <div className="loading-text">Loading Chat</div>
       </div>
     );
+
 
   // ---------------- UI ----------------
   return (
