@@ -139,7 +139,7 @@ export default function DashboardPage() {
 
         {/* Leaderboard + Chart */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8 md:mb-12">
-          <div className="shine-effect p-4 md:p-6 rounded-3xl" style={{background: cardBg}}>
+          <div className="shine-effect p-4 md:p-6 rounded-3xl hover:scale-103 transition-all duration-300" style={{background: cardBg}}>
             <h2 className="text-xl md:text-2xl font-bold mb-2">🏆 Leaderboard</h2>
             <p className="text-xs mb-3" style={{color: subTextColor}}>ⓘ Points verified & updated regularly</p>
             <div className="space-y-2 md:space-y-3">
@@ -155,7 +155,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="shine-effect p-4 md:p-6 rounded-3xl" style={{background: cardBg}}>
+          <div className="shine-effect p-4 md:p-6 rounded-3xl hover:scale-103 transition-all duration-300" style={{background: cardBg}}>
             <h2 className="text-xl md:text-2xl font-bold mb-4">📊 Notes by Subject</h2>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={160}>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
             if (subjectNotes.length === 0) return null;
             const isOpen = openSubject === subject;
             return (
-              <div key={subject} className="rounded-3xl overflow-hidden transition-all duration-300" style={{background: cardBg2, border}}>
+              <div key={subject} className="rounded-3xl overflow-hidden transition-all duration-300 hover:scale-103" style={{background: cardBg2, border}}>
                 <button onClick={() => setOpenSubject(isOpen ? null : subject)} className="w-full flex items-center justify-between p-4 md:p-5 transition hover:opacity-80">
                   <span className="text-base md:text-xl font-bold">{subject}</span>
                   <span className="text-xs md:text-sm" style={{color: subTextColor}}>{subjectNotes.length} notes {isOpen ? "▲" : "▼"}</span>
