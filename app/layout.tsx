@@ -63,10 +63,13 @@ export default function RootLayout({
 
                 {/* Main Content */}
                 <main
-                  className="min-h-screen transition-all duration-300"
-                  style={{
-                    marginLeft: hideSidebar ? "0px" : collapsed ? "80px" : "256px",
-                  }}
+                  className={`flex-1 min-h-screen w-full overflow-x-hidden transition-all duration-300 ${
+                    hideSidebar
+                      ? "ml-0"
+                      : collapsed
+                      ? "md:ml-20"
+                      : "md:ml-64"
+                  }`}
                 >
                   {children}
                 </main>
