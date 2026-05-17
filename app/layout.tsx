@@ -49,7 +49,7 @@ export default function RootLayout({
             ) : (
 
               /* DESKTOP LAYOUT */
-              <div className="flex min-h-screen">
+              <div className="flex min-h-screen relative">
 
                 {/* Sidebar */}
                 {!hideSidebar && (
@@ -63,13 +63,10 @@ export default function RootLayout({
 
                 {/* Main Content */}
                 <main
-                  className={`flex-1 min-h-screen w-full overflow-x-hidden transition-all duration-300 ${
-                    hideSidebar
-                      ? "ml-0"
-                      : collapsed
-                      ? "md:ml-20"
-                      : "md:ml-64"
-                  }`}
+                  className="min-h-screen transition-all duration-300"
+                  style={{
+                    marginLeft: hideSidebar ? "0px" : collapsed ? "80px" : "256px",
+                  }}
                 >
                   {children}
                 </main>
