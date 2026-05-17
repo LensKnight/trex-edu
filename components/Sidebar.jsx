@@ -43,7 +43,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       onMouseEnter={() => setCollapsed(false)}
       onMouseLeave={() => setCollapsed(true)}
       style={{
-        width: collapsed ? "60px" : "250px",
+        width: collapsed ? "80px" : "256px",
         background: "linear-gradient(180deg, #1a0000 0%, #0d0000 50%, #000000 100%)",
         borderRight: "1px solid #3f0000",
         overflow: "hidden",
