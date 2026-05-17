@@ -221,7 +221,7 @@ export default function MobileProfilePage() {
 
       {/* Bottom Nav */}
       <div
-        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl"
+        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl glass"
         style={{
           background: darkMode ? "#0d0000" : "#fff5f5",
           border,
@@ -231,7 +231,7 @@ export default function MobileProfilePage() {
           href="/mobile/dashboard"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">⚡</span>
+          <span className="text-xl">🏠</span>
           <span
             className="text-xs"
             style={{ color: subTextColor }}
@@ -257,7 +257,7 @@ export default function MobileProfilePage() {
           href="/mobile/upload"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">📤</span>
+          <span className="text-xl">➕</span>
           <span
             className="text-xs"
             style={{ color: subTextColor }}

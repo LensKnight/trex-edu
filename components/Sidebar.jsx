@@ -29,8 +29,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   }
 
   const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: "⚡" },
-    { href: "/upload", label: "Upload Notes", icon: "📤" },
+    { href: "/dashboard", label: "Dashboard", icon: "🏠" },
+    { href: "/upload", label: "Upload Notes", icon: "➕" },
     { href: "/feed", label: "Notes Feed", icon: "📚" },
     { href: "/classmates", label: "Classmates", icon: "👥" },
     { href: "/chat", label: "Class Chat", icon: "💬" },

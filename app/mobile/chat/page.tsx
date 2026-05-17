@@ -335,7 +335,7 @@ export default function MobileChatPage() {
 
       {/* BOTTOM NAV */}
       <div
-        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-50 rounded-3xl"
+        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-50 rounded-3xl glass"
         style={{
           background: darkMode
             ? "#0d0000"
@@ -347,7 +347,7 @@ export default function MobileChatPage() {
           href="/mobile/dashboard"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">⚡</span>
+          <span className="text-xl">🏠</span>
           <span
             className="text-[10px]"
             style={{
@@ -377,7 +377,7 @@ export default function MobileChatPage() {
           href="/mobile/upload"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">📤</span>
+          <span className="text-xl">➕</span>
           <span
             className="text-[10px]"
             style={{

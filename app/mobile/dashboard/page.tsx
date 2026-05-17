@@ -199,9 +199,9 @@ export default function MobileDashboardPage() {
       </div>
 
       {/* Bottom Nav */}
-      <div className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl" style={{background: darkMode ? "#0d0000" : "#fff5f5", border}}>
+      <div className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl glass" style={{background: darkMode ? "#0d0000" : "#fff5f5", border}}>
         <a href="/mobile/dashboard" className="flex flex-col items-center gap-1">
-          <span className="text-xl">⚡</span>
+          <span className="text-xl">🏠</span>
           <span className="text-xs" style={{color: subTextColor}}>Home</span>
         </a>
         <a href="/mobile/feed" className="flex flex-col items-center gap-1">
@@ -209,7 +209,7 @@ export default function MobileDashboardPage() {
           <span className="text-xs" style={{color: subTextColor}}>Notes</span>
         </a>
         <a href="/mobile/upload" className="flex flex-col items-center gap-1">
-          <span className="text-xl">📤</span>
+          <span className="text-xl">➕</span>
           <span className="text-xs" style={{color: subTextColor}}>Upload</span>
         </a>
         <a href="/mobile/chat" className="flex flex-col items-center gap-1">
