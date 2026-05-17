@@ -291,44 +291,58 @@ export default function MobileChatPage() {
 
       {/* INPUT */}
       <div
-        className="fixed bottom-20 left-0 right-0 px-3 z-40"
+        className="fixed left-0 right-0 px-3 z-40 transition-all duration-300"
+        style={{
+          bottom: "88px",
+        }}
       >
         <div
-          className="flex items-center gap-2 p-2 rounded-3xl backdrop-blur-md"
+          className="flex items-end gap-2 p-2 rounded-[28px] backdrop-blur-xl"
           style={{
             background: darkMode
-              ? "rgba(10,0,0,0.85)"
-              : "rgba(255,245,245,0.9)",
+              ? "rgba(15,0,0,0.72)"
+              : "rgba(255,245,245,0.72)",
             border,
+            WebkitBackdropFilter: "blur(20px)",
+            backdropFilter: "blur(20px)",
+            boxShadow: darkMode
+              ? "0 8px 32px rgba(0,0,0,0.45)"
+              : "0 8px 32px rgba(0,0,0,0.12)",
           }}
         >
           <input
             value={text}
-            onChange={(e) =>
-              setText(e.target.value)
-            }
+            onChange={(e) => setText(e.target.value)}
+            onFocus={() => {
+              setTimeout(() => {
+                bottomRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }, 300);
+            }}
             onKeyDown={(e) =>
-              e.key === "Enter" &&
-              sendMessage()
+              e.key === "Enter" && sendMessage()
             }
             placeholder="Type message..."
-            className="flex-1 p-3 rounded-2xl outline-none text-sm"
+            className="flex-1 px-4 py-3 rounded-2xl outline-none text-sm"
             style={{
               background: inputBg,
               color: textColor,
               border,
+              minHeight: "48px",
             }}
           />
 
           <button
             onClick={sendMessage}
-            className="px-4 py-3 rounded-2xl text-white font-bold text-sm transition-all duration-300"
+            className="px-4 py-3 rounded-2xl text-white font-bold text-sm transition-all duration-300 active:scale-95"
             style={{
               background:
-                "linear-gradient(135deg, #9b0000, #3d0000)",
+                "linear-gradient(135deg, #b30000, #3d0000)",
+              minHeight: "48px",
             }}
           >
-            Send
+            ➤
           </button>
         </div>
       </div>
