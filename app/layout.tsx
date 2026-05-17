@@ -29,13 +29,17 @@ export default function RootLayout({
         <ThemeProvider>
           <ThemedBody>
             <div className="flex">
-              {!hideSidebar && (
-                <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-              )}
-              <main
-                className="flex-1 min-h-screen transition-all duration-300"
-                style={{ marginLeft: hideSidebar ? "0" : collapsed ? "60px" : "250px" }}
-              >
+                {!hideSidebar && (
+                  <div className="hidden md:block">
+                    <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+                  </div>
+                )}
+                <main
+                  className="flex-1 min-h-screen transition-all duration-300"
+                  style={{ marginLeft: hideSidebar ? "0" : undefined }}
+                  // @ts-ignore
+                  style2={{}}
+                >
                 {children}
               </main>
             </div>
