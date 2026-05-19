@@ -217,6 +217,14 @@ export default function MobileProfilePage() {
             </div>
           ))}
         </div>
+
+       <a
+          href="/mobile/classmates"
+            className="w-full p-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 mt-2"
+            style={{background: "linear-gradient(135deg, #6b0000, #3d0000)"}}
+          >
+            👥 View Classmates
+        </a>
       </div>
 
       {/* Bottom Nav */}

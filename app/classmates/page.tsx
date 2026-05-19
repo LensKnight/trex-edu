@@ -78,7 +78,7 @@ export default function ClassmatesPage() {
             <div
               key={student.id}
               onClick={() => setSelectedStudent(student)}
-              className="p-4 rounded-2xl hover:scale-105 transition-all duration-300 cursor-pointer"
+              className="p-4 rounded-2xl hover:scale-103 transition-all duration-300 cursor-pointer"
               style={{background: cardBg, border}}
             >
               <h2 className="text-lg font-bold">🌐 {student.full_name}</h2>

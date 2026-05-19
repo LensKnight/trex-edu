@@ -23,6 +23,9 @@ export default function MobileFeedPage() {
   const [likedNotes, setLikedNotes] = useState<string[]>([]);
   const [reportedNotes, setReportedNotes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState("");
+  const [viewerType, setViewerType] = useState<"image" | "pdf" | "other">("other");
 
   const bg = darkMode
     ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"
@@ -74,12 +77,50 @@ export default function MobileFeedPage() {
 
   const openNote = async (fileId?: string) => {
     if (!fileId) return alert("File not found");
+
     try {
-      const res = await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`);
+      const res = await fetch(
+        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`
+      );
+
       const data = await res.json();
+
       if (!data.ok) return alert("Cannot open file");
-      window.open(`https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${data.result.file_path}`, "_blank");
-    } catch { alert("Open failed"); }
+
+      const filePath = data.result.file_path;
+
+      const fileUrl =
+        `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
+
+      const lower = filePath.toLowerCase();
+
+      // IMAGE
+      if (
+        lower.endsWith(".jpg") ||
+        lower.endsWith(".jpeg") ||
+        lower.endsWith(".png") ||
+        lower.endsWith(".webp")
+      ) {
+        setViewerType("image");
+        setViewerUrl(fileUrl);
+        setViewerOpen(true);
+        return;
+      }
+
+      // PDF
+      if (lower.endsWith(".pdf")) {
+        setViewerType("pdf");
+        setViewerUrl(fileUrl);
+        setViewerOpen(true);
+        return;
+      }
+
+      // OTHER FILES
+      window.open(fileUrl, "_blank");
+
+    } catch {
+      alert("Open failed");
+    }
   };
 
   async function likeNote(note: Note) {

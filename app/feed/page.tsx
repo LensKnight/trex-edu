@@ -24,6 +24,9 @@ export default function FeedPage() {
   const [likedNotes, setLikedNotes] = useState<string[]>([]);
   const [reportedNotes, setReportedNotes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState("");
+  const [viewerType, setViewerType] = useState<"image" | "pdf" | "other">("other");
 
   const bg = darkMode
     ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"
@@ -166,9 +169,36 @@ export default function FeedPage() {
 
       if (!data.ok) return alert("Cannot open file");
 
-      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${data.result.file_path}`;
+      const filePath = data.result.file_path;
 
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
+
+      const lower = filePath.toLowerCase();
+
+      // IMAGE
+      if (
+        lower.endsWith(".jpg") ||
+        lower.endsWith(".jpeg") ||
+        lower.endsWith(".png") ||
+        lower.endsWith(".webp")
+      ) {
+        setViewerType("image");
+        setViewerUrl(fileUrl);
+        setViewerOpen(true);
+        return;
+      }
+
+      // PDF
+      if (lower.endsWith(".pdf")) {
+        setViewerType("pdf");
+        setViewerUrl(fileUrl);
+        setViewerOpen(true);
+        return;
+      }
+
+      // OTHER FILES
       window.open(fileUrl, "_blank");
+
     } catch (err) {
       alert("Open failed");
     }
@@ -357,7 +387,7 @@ export default function FeedPage() {
       </div>
 
       {/* Search */}
-      <div className="mb-6 md:mb-10">
+      <div className="mb-6 md:mb-10 hover: scale-102 transition-all duration-300">
         <input
           type="text"
           placeholder="🔍 Search notes..."
@@ -372,6 +402,45 @@ export default function FeedPage() {
             border,
           }}
         />
+        {/* FILE VIEWER */}
+        {viewerOpen && (
+          <div
+            className="fixed inset-0 flex items-center justify-center"
+            onClick={() => setViewerOpen(false)}
+          >
+            <div
+              className="relative w-full h-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setViewerOpen(false)}
+                className="absolute top-4 right-4 z-50 bg-black/70 text-white px-4 py-2 rounded-xl"
+              >
+                ✕
+              </button>
+
+              {/* IMAGE */}
+              {viewerType === "image" && (
+                <img
+                  src={viewerUrl}
+                  className="w-full h-full object-contain"
+                />
+              )}
+
+              {/* PDF (FIXED SIZE) */}
+              {viewerType === "pdf" && (
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(
+                    viewerUrl
+                  )}&embedded=true`}
+                  className="w-full h-full"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Notes */}
