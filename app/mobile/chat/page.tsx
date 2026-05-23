@@ -26,6 +26,25 @@ export default function MobileChatPage() {
   const [loading, setLoading] = useState(true);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // ✅ FIX 1: clean vh handling only (NO visualViewport hack)
+  useEffect(() => {
+    const updateVH = () => {
+      document.documentElement.style.setProperty(
+        "--vh",
+        `${window.innerHeight * 0.01}px`
+      );
+    };
+
+    updateVH();
+    window.addEventListener("resize", updateVH);
+
+    return () => window.removeEventListener("resize", updateVH);
+  }, []);
+
+  // ❌ REMOVED: touchmove blocker (breaks Chrome keyboard)
+  // ❌ REMOVED: visualViewport offset (causes lag jump)
 
   const bg = darkMode
     ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"
@@ -49,6 +68,19 @@ export default function MobileChatPage() {
   const border = darkMode
     ? "1px solid #3f0000"
     : "1px solid #ffb3b3";
+
+  // 🔥 FIX 2: smooth WhatsApp-style auto scroll (stable)
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    requestAnimationFrame(() => {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+  }, [messages]);
 
   useEffect(() => {
     init();
@@ -83,23 +115,6 @@ export default function MobileChatPage() {
     };
   }, [profileCache]);
 
-  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-
-    if (!container) return;
-
-    const isNearBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight < 120;
-
-    if (isNearBottom) {
-      bottomRef.current?.scrollIntoView({
-        behavior: "smooth",
-      });
-    }
-  }, [messages]);
-
   async function init() {
     const {
       data: { user },
@@ -131,18 +146,12 @@ export default function MobileChatPage() {
 
     setProfileCache(map);
 
-    await fetchMessages(
-      profileData.class_name,
-      profileData.section
-    );
+    await fetchMessages(profileData.class_name, profileData.section);
 
     setLoading(false);
   }
 
-  async function fetchMessages(
-    className: string,
-    section: string
-  ) {
+  async function fetchMessages(className: string, section: string) {
     const { data } = await supabase
       .from("messages")
       .select(`
@@ -185,20 +194,14 @@ export default function MobileChatPage() {
   if (loading)
     return (
       <div className="loading-screen">
-        <img
-          src="/toggle-icon.png"
-          className="loading-x"
-          alt="loading"
-        />
-        <div className="loading-text">
-          Loading Chat
-        </div>
+        <img src="/toggle-icon.png" className="loading-x" alt="loading" />
+        <div className="loading-text">Loading Chat</div>
       </div>
     );
 
   return (
     <div
-      className="flex flex-col h-screen transition-all duration-500"
+      className="flex flex-col h-dvh"
       style={{
         background: bg,
         color: textColor,
@@ -208,35 +211,25 @@ export default function MobileChatPage() {
       <div className="shrink-0 px-4 pt-5 pb-3">
         <div className="flex items-start justify-between">
           <div>
-            <p
-              className="text-[10px] font-medium tracking-[0.25em] uppercase mb-1"
-              style={{ color: subTextColor }}
-            >
+            <p className="text-[10px] font-medium tracking-[0.25em] uppercase mb-1"
+              style={{ color: subTextColor }}>
               Real-time
             </p>
 
-            <h1 className="text-2xl font-bold">
-              Class Chat 💬
-            </h1>
+            <h1 className="text-2xl font-bold">Class Chat 💬</h1>
 
-            <div
-              className="h-0.5 w-12 rounded-full mt-2"
+            <div className="h-0.5 w-12 rounded-full mt-2"
               style={{
-                background:
-                  "linear-gradient(90deg, #8b0000, transparent)",
+                background: "linear-gradient(90deg, #8b0000, transparent)",
               }}
             />
           </div>
 
           <button
-            onClick={() =>
-              setDarkMode(!darkMode)
-            }
-            className="p-2 rounded-xl text-sm transition-all duration-300"
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-2 rounded-xl text-sm"
             style={{
-              background: darkMode
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)",
+              background: darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
               color: textColor,
             }}
           >
@@ -248,29 +241,18 @@ export default function MobileChatPage() {
       {/* MESSAGES */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-3 pb-28 pt-1 space-y-3"
+        className="flex-1 overflow-y-auto px-3 pt-1 space-y-3 pb-35"
       >
         {messages.map((msg) => {
           const isMe = msg.user_id === userId;
 
           return (
-            <div
-              key={msg.id}
-              className={`flex ${
-                isMe
-                  ? "justify-end"
-                  : "justify-start"
-              }`}
-            >
+            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
               <div
                 className="max-w-[82%] px-3 py-2 shadow-md"
                 style={{
-                  background: isMe
-                    ? myMsgBg
-                    : otherMsgBg,
-                  color: isMe
-                    ? "#fff"
-                    : textColor,
+                  background: isMe ? myMsgBg : otherMsgBg,
+                  color: isMe ? "#fff" : textColor,
                   border,
                   borderRadius: isMe
                     ? "18px 18px 4px 18px"
@@ -278,23 +260,15 @@ export default function MobileChatPage() {
                 }}
               >
                 {!isMe && (
-                  <p
-                    className="text-[10px] mb-1 opacity-80"
-                    style={{
-                      color: subTextColor,
-                    }}
-                  >
-                    {msg.profiles?.[0]
-                      ?.full_name ||
-                      profileCache[msg.user_id]
-                        ?.full_name ||
+                  <p className="text-[10px] mb-1 opacity-80"
+                    style={{ color: subTextColor }}>
+                    {msg.profiles?.[0]?.full_name ||
+                      profileCache[msg.user_id]?.full_name ||
                       "Student"}
                   </p>
                 )}
 
-                <p className="text-sm wrap-break-words">
-                  {msg.message}
-                </p>
+                <p className="text-sm wrap-break-words">{msg.message}</p>
               </div>
             </div>
           );
@@ -304,9 +278,7 @@ export default function MobileChatPage() {
       </div>
 
       {/* INPUT */}
-      <div
-        className="sticky bottom-22 px-3 z-40"
-      >
+      <div className="fixed left-0 right-0 px-3 z-40 bottom-18">
         <div
           className="flex items-end gap-2 p-2 rounded-[28px] backdrop-blur-xl"
           style={{
@@ -314,36 +286,29 @@ export default function MobileChatPage() {
               ? "rgba(15,0,0,0.72)"
               : "rgba(255,245,245,0.72)",
             border,
-            WebkitBackdropFilter: "blur(20px)",
-            backdropFilter: "blur(20px)",
-            boxShadow: darkMode
-              ? "0 8px 32px rgba(0,0,0,0.45)"
-              : "0 8px 32px rgba(0,0,0,0.12)",
           }}
         >
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && sendMessage()
-            }
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Type message..."
             className="flex-1 px-4 py-3 rounded-2xl outline-none text-sm"
             style={{
               background: inputBg,
               color: textColor,
               border,
-              minHeight: "48px",
+              bottom: "calc(64px + env(safe-area-inset-bottom) + var(--keyboard-offset, 0px) + 10px)",
+              transition: "bottom 0.25s ease, transform 0.25s ease",
+              transform: "translateY(calc(-1 * var(--keyboard-offset, 0px) * 0.15))"
             }}
           />
 
           <button
             onClick={sendMessage}
-            className="px-4 py-3 rounded-2xl text-white font-bold text-sm transition-all duration-300 active:scale-95"
+            className="px-4 py-3 rounded-2xl text-white font-bold text-sm"
             style={{
-              background:
-                "linear-gradient(135deg, #b30000, #3d0000)",
-              minHeight: "48px",
+              background: "linear-gradient(135deg, #b30000, #3d0000)",
             }}
           >
             ➤
@@ -356,16 +321,22 @@ export default function MobileChatPage() {
         className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-50 rounded-3xl glass"
         style={{
           background: darkMode
-            ? "#0d0000"
-            : "#fff5f5",
+            ? "rgba(13,0,0,0.75)"
+            : "rgba(255,245,245,0.7)",
           border,
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter:
+            "blur(18px)",
         }}
-      >
+        >
         <a
           href="/mobile/dashboard"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">🏠</span>
+          <span className="text-xl">
+            🏠
+          </span>
+
           <span
             className="text-[10px]"
             style={{
@@ -380,7 +351,10 @@ export default function MobileChatPage() {
           href="/mobile/feed"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">📚</span>
+          <span className="text-xl">
+            📚
+          </span>
+
           <span
             className="text-[10px]"
             style={{
@@ -395,7 +369,10 @@ export default function MobileChatPage() {
           href="/mobile/upload"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">➕</span>
+          <span className="text-xl">
+            ➕
+          </span>
+
           <span
             className="text-[10px]"
             style={{
@@ -410,7 +387,10 @@ export default function MobileChatPage() {
           href="/mobile/chat"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">💬</span>
+          <span className="text-xl">
+            💬
+          </span>
+
           <span
             className="text-[10px]"
             style={{
@@ -425,7 +405,10 @@ export default function MobileChatPage() {
           href="/mobile/profile"
           className="flex flex-col items-center gap-1"
         >
-          <span className="text-xl">👤</span>
+          <span className="text-xl">
+            👤
+          </span>
+
           <span
             className="text-[10px]"
             style={{
