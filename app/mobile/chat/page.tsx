@@ -313,13 +313,6 @@ export default function MobileChatPage() {
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onFocus={() => {
-              setTimeout(() => {
-                bottomRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                });
-              }, 300);
-            }}
             onKeyDown={(e) =>
               e.key === "Enter" && sendMessage()
             }
