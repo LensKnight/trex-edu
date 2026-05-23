@@ -75,34 +75,86 @@ export default function MobileFeedPage() {
     if (data) setReportedNotes(data.map((d) => d.note_id));
   }
 
-const openNote = async (fileId?: string) => {
+  const openNote = async (fileId?: string) => {
     if (!fileId) return alert("File not found");
+
     try {
-      const res = await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`);
+      const res = await fetch(
+        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`
+      );
+
       const data = await res.json();
+
       if (!data.ok) return alert("Cannot open file");
 
       const filePath = data.result.file_path;
-      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
+
+      const fileUrl =
+        `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
+
       const lower = filePath.toLowerCase();
 
+      // PDF
       if (lower.endsWith(".pdf")) {
-        const res = await fetch(fileUrl);
-        const blob = await res.blob();
+
+        // Google PDF Viewer
+        const viewer =
+          `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(fileUrl)}`;
+
+        window.open(viewer, "_blank");
+
+      }
+
+      // Images
+      else if (
+        lower.endsWith(".jpg") ||
+        lower.endsWith(".jpeg") ||
+        lower.endsWith(".png") ||
+        lower.endsWith(".webp")
+      ) {
+
+        const html = `
+          <html>
+            <body style="
+              margin:0;
+              background:#000;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              min-height:100vh;
+            ">
+              <img
+                src="${fileUrl}"
+                style="
+                  max-width:100%;
+                  max-height:100vh;
+                  object-fit:contain;
+                "
+              />
+            </body>
+          </html>
+        `;
+
+        const blob = new Blob([html], {
+          type: "text/html",
+        });
+
         const blobUrl = URL.createObjectURL(blob);
+
         window.open(blobUrl, "_blank");
-      } else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp")) {
-        const html = `<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${fileUrl}" style="max-width:100%;max-height:100vh;object-fit:contain"/></body></html>`;
-        const blob = new Blob([html], {type: "text/html"});
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, "_blank");
-      } else {
+
+      }
+
+      // Other files
+      else {
         window.open(fileUrl, "_blank");
       }
-    } catch {
+
+    } catch (err) {
+      console.log(err);
       alert("Open failed");
     }
-  };
+};
 
   async function likeNote(note: Note) {
     if (!session || liking === note.id) return;
