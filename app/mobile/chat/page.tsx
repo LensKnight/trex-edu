@@ -83,10 +83,21 @@ export default function MobileChatPage() {
     };
   }, [profileCache]);
 
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    const container = messagesContainerRef.current;
+
+    if (!container) return;
+
+    const isNearBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
 
   async function init() {
@@ -235,7 +246,10 @@ export default function MobileChatPage() {
       </div>
 
       {/* MESSAGES */}
-      <div className="flex-1 overflow-y-auto px-3 pb-28 pt-1 space-y-3">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto px-3 pb-28 pt-1 space-y-3"
+      >
         {messages.map((msg) => {
           const isMe = msg.user_id === userId;
 
