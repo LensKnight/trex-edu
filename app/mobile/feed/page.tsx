@@ -75,49 +75,30 @@ export default function MobileFeedPage() {
     if (data) setReportedNotes(data.map((d) => d.note_id));
   }
 
-  const openNote = async (fileId?: string) => {
+const openNote = async (fileId?: string) => {
     if (!fileId) return alert("File not found");
-
     try {
-      const res = await fetch(
-        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`
-      );
-
+      const res = await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`);
       const data = await res.json();
-
       if (!data.ok) return alert("Cannot open file");
 
       const filePath = data.result.file_path;
-
-      const fileUrl =
-        `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
-
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
       const lower = filePath.toLowerCase();
 
-      // IMAGE
-      if (
-        lower.endsWith(".jpg") ||
-        lower.endsWith(".jpeg") ||
-        lower.endsWith(".png") ||
-        lower.endsWith(".webp")
-      ) {
-        setViewerType("image");
-        setViewerUrl(fileUrl);
-        setViewerOpen(true);
-        return;
-      }
-
-      // PDF
       if (lower.endsWith(".pdf")) {
-        setViewerType("pdf");
-        setViewerUrl(fileUrl);
-        setViewerOpen(true);
-        return;
+        const res = await fetch(fileUrl);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+      } else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp")) {
+        const html = `<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${fileUrl}" style="max-width:100%;max-height:100vh;object-fit:contain"/></body></html>`;
+        const blob = new Blob([html], {type: "text/html"});
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+      } else {
+        window.open(fileUrl, "_blank");
       }
-
-      // OTHER FILES
-      window.open(fileUrl, "_blank");
-
     } catch {
       alert("Open failed");
     }
@@ -143,7 +124,7 @@ export default function MobileFeedPage() {
     if (error) return alert("Report failed!");
     setReportedNotes((prev) => [...prev, note.id]);
     const { count } = await supabase.from("note_reports").select("*", { count: "exact", head: true }).eq("note_id", note.id);
-    if ((count ?? 0) >= 2) {
+    if ((count ?? 0) >= 3) {
       await supabase.from("notes").delete().eq("id", note.id);
       setNotes((prev) => prev.filter((n) => n.id !== note.id));
       alert("Note removed due to multiple reports!");
@@ -212,9 +193,16 @@ export default function MobileFeedPage() {
                   const isOwn = note.uploader_id === session?.user.id;
                   return (
                     <div key={note.id} className="p-4 rounded-2xl" style={{background: cardBg, border}}>
-                      <p className="text-xs mb-1 font-medium" style={{color: subTextColor}}>
-                        {isOwn ? "📝 You" : `👤 ${note.uploader_name}`}
-                      </p>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-medium" style={{color: subTextColor}}>
+                            {isOwn ? "📝 You" : `👤 ${note.uploader_name}`}
+                          </p>
+                          {note.likes >= 3 && (
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{background: "linear-gradient(135deg, #6b0000, #3d0000)", color: "#ffd700"}}>
+                              ⭐ Best!
+                            </span>
+                          )}
+                        </div>
                       <h3 className="text-base font-bold mb-1 truncate">{note.title}</h3>
                       <p className="text-xs mb-3" style={{color: subTextColor}}>{note.subject}</p>
                       <div className="flex items-center gap-2 flex-wrap">

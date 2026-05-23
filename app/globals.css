@@ -58,6 +58,12 @@ body {
   gap: 20px;
 }
 
+@media (prefers-color-scheme: light) {
+  .loading-screen {
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe4e4 40%, #ffffff 100%);
+  }
+}
+
 .loading-x {
   width: 120px;
   height: 80px;
@@ -72,7 +78,13 @@ body {
   animation: pulse-red 1.2s ease-in-out infinite;
 }
 
+.light-mode .loading-screen {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe4e4 40%, #ffffff 100%);
+}
 
+.light-mode .loading-text {
+  color: #8b0000;
+}
 
 /* Glow effect for welcome text */
 .glow-text {

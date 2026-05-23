@@ -72,7 +72,7 @@ export default function AnnouncementsPage() {
           </div>
         )}
         {announcements.map((item) => (
-          <div key={item.id} className="p-5 rounded-2xl transition-all duration-300 hover:scale-105" style={{background: cardBg, border}}>
+          <div key={item.id} className="p-5 rounded-2xl transition-all duration-300 hover:scale-103" style={{background: cardBg, border}}>
             <h2 className="text-xl font-bold mb-2">{item.title}</h2>
             <p className="mb-4 text-sm" style={{color: darkMode ? "#d4d4d4" : "#3d0000"}}>{item.message}</p>
             <p className="text-xs" style={{color: subTextColor}}>

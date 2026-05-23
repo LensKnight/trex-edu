@@ -25,9 +25,7 @@ export default function FeedPage() {
   const [reportedNotes, setReportedNotes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewerUrl, setViewerUrl] = useState("");
-  const [viewerType, setViewerType] = useState<"image" | "pdf" | "other">("other");
-
+  
   const bg = darkMode
     ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"
     : "linear-gradient(135deg, #fff5f5 0%, #ffe4e4 40%, #ffffff 100%)";
@@ -159,47 +157,28 @@ export default function FeedPage() {
 
   const openNote = async (fileId?: string) => {
     if (!fileId) return alert("File not found");
-
     try {
-      const res = await fetch(
-        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`
-      );
-
+      const res = await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`);
       const data = await res.json();
-
       if (!data.ok) return alert("Cannot open file");
 
       const filePath = data.result.file_path;
-
       const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
-
       const lower = filePath.toLowerCase();
 
-      // IMAGE
-      if (
-        lower.endsWith(".jpg") ||
-        lower.endsWith(".jpeg") ||
-        lower.endsWith(".png") ||
-        lower.endsWith(".webp")
-      ) {
-        setViewerType("image");
-        setViewerUrl(fileUrl);
-        setViewerOpen(true);
-        return;
-      }
-
-      // PDF
       if (lower.endsWith(".pdf")) {
-        setViewerType("pdf");
-        setViewerUrl(fileUrl);
-        setViewerOpen(true);
-        return;
+        window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}`, "_blank");
+      } 
+        else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp")) {
+        // Image — HTML page mein wrap karke dikhao
+        const html = `<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${fileUrl}" style="max-width:100%;max-height:100vh;object-fit:contain"/></body></html>`;
+        const blob = new Blob([html], {type: "text/html"});
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+      } else {
+        window.open(fileUrl, "_blank");
       }
-
-      // OTHER FILES
-      window.open(fileUrl, "_blank");
-
-    } catch (err) {
+    } catch {
       alert("Open failed");
     }
   };
@@ -271,7 +250,7 @@ export default function FeedPage() {
       })
       .eq("note_id", note.id);
 
-    if (count && count >= 2) {
+    if (count && count >= 3) {
       const {
         data: profileData,
         error: profileError,
@@ -403,43 +382,7 @@ export default function FeedPage() {
           }}
         />
         {/* FILE VIEWER */}
-        {viewerOpen && (
-          <div
-            className="fixed inset-0 flex items-center justify-center"
-            onClick={() => setViewerOpen(false)}
-          >
-            <div
-              className="relative w-full h-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setViewerOpen(false)}
-                className="absolute top-4 right-4 z-50 bg-black/70 text-white px-4 py-2 rounded-xl"
-              >
-                ✕
-              </button>
-
-              {/* IMAGE */}
-              {viewerType === "image" && (
-                <img
-                  src={viewerUrl}
-                  className="w-full h-full object-contain"
-                />
-              )}
-
-              {/* PDF (FIXED SIZE) */}
-              {viewerType === "pdf" && (
-                <iframe
-                  src={`https://docs.google.com/gview?url=${encodeURIComponent(
-                    viewerUrl
-                  )}&embedded=true`}
-                  className="w-full h-full"
-                />
-              )}
-            </div>
-          </div>
-        )}
+        
 
       </div>
 
@@ -483,16 +426,16 @@ export default function FeedPage() {
                       border,
                     }}
                   >
-                    <p
-                      className="text-xs mb-1 font-medium"
-                      style={{
-                        color: subTextColor,
-                      }}
-                    >
-                      {isOwn
-                        ? "📝 You"
-                        : `👤 ${note.uploader_name}`}
-                    </p>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-medium" style={{color: subTextColor}}>
+                        {isOwn ? "📝 You" : `👤 ${note.uploader_name}`}
+                      </p>
+                      {note.likes >= 3 && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{background: "linear-gradient(135deg, #6b0000, #3d0000)", color: "#ffd700"}}>
+                          ⭐ Students Choice!
+                        </span>
+                      )}
+                    </div>
 
                     <h3 className="text-lg md:text-2xl font-bold mb-2 truncate">
                       {note.title}

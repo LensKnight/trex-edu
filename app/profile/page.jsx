@@ -36,6 +36,7 @@ export default function ProfilePage() {
 
   return (
       <div className="min-h-screen flex items-center justify-center text-white" style={{background: "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"}}>
+        <img src="/mvmlogo.png" alt="" className="absolute inset-0 w-full h-full object-contain opacity-5 pointer-events-none p-2" />
         <div className="p-8 rounded-2xl w-96" style={{background: "rgba(255,255,255,0.04)", border: "1px solid #3f0000"}}>
         <h1 className="text-3xl font-bold mb-6 text-center">My Profile</h1>
 

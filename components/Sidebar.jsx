@@ -60,7 +60,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       {!collapsed && (
         <div className="px-4 mb-4">
           {profile ? (
-            <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #3f0000" }}>
+            <div className="p-4 rounded-2xl relative overflow-hidden" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #3f0000" }}>
+              {/* Background logo */}
+              <img src="/mvmlogo.png" alt="" className="absolute inset-0 w-full h-full object-contain opacity-10 pointer-events-none p-2" />
+
               <div className="flex items-center justify-between">
                 <a href="/profile" className="flex items-center gap-3 flex-1">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0" style={{ background: "linear-gradient(135deg, #6b0000, #3d0000)" }}>

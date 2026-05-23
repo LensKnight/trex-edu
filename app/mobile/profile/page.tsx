@@ -73,6 +73,7 @@ export default function MobileProfilePage() {
       className="min-h-screen transition-all duration-500"
       style={{ background: bg, color: textColor }}
     >
+      
       <div className="p-4 pb-24">
 
         {/* Header */}
@@ -120,6 +121,7 @@ export default function MobileProfilePage() {
           <div className="flex justify-center mb-3">
 
           </div>
+          <img src="/mvmlogo.png" alt="" className="absolute inset-0 w-full h-full object-contain opacity-5 pointer-events-none p-2" />
 
           <h2 className="text-xl font-bold mb-1">
             {profile.full_name}
@@ -184,7 +186,7 @@ export default function MobileProfilePage() {
               label: "What Describes You?",
               value:
                 profile.description ||
-                "TreX Edu Student 🚀",
+                "MVM-IV Student ",
               icon: "✨",
             },
           ].map((item) => (

@@ -40,8 +40,8 @@ export default function RootLayout({
               /* DESKTOP LAYOUT */
               <div className="flex min-h-screen">
 
-                {!isMobilePage && (
-                  <div className= "flex shrink-0">
+                {!hideSidebar && !isMobilePage && (
+                  <div className="flex shrink-0">
                     <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
                   </div>
                 )}

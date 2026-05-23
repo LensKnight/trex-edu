@@ -21,7 +21,7 @@ export default function AuthPage() {
     });
 
     if (error) {
-      alert("Username ya password galat hai!");
+      alert("Username or Password is incorrect!");
     } else {
       router.push("/dashboard");
     }
