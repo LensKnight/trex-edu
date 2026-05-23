@@ -305,10 +305,7 @@ export default function MobileChatPage() {
 
       {/* INPUT */}
       <div
-        className="fixed left-0 right-0 px-3 z-40 transition-all duration-300"
-        style={{
-          bottom: "88px",
-        }}
+        className="sticky bottom-22 px-3 z-40"
       >
         <div
           className="flex items-end gap-2 p-2 rounded-[28px] backdrop-blur-xl"
