@@ -56,6 +56,11 @@ export default function MobileProfilePage() {
     setProfile(data);
   }
 
+  async function logout() {
+    await supabase.auth.signOut();
+    router.push("/");
+  }
+
   if (loading || !profile)
     return (
       <div className="loading-screen">
@@ -121,7 +126,7 @@ export default function MobileProfilePage() {
           <div className="flex justify-center mb-3">
 
           </div>
-          <img src="/mvmlogo.png" alt="" className="absolute inset-0 w-full h-full object-contain opacity-5 pointer-events-none p-2" />
+          <img src="/mvmlogo.png" alt="" className="absolute inset-0 w-full h-full object-contain opacity-30 pointer-events-none p-2" />
 
           <h2 className="text-xl font-bold mb-1">
             {profile.full_name}
@@ -227,6 +232,14 @@ export default function MobileProfilePage() {
           >
             👥 View Classmates
         </a>
+
+        <button
+          onClick={logout}
+          className="w-full p-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 mt-4"
+          style={{ background: "linear-gradient(135deg, #8b0000, #4d0000)" }}
+        >
+          Logout
+        </button>
       </div>
 
       {/* Bottom Nav */}

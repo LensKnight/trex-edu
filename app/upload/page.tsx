@@ -25,7 +25,104 @@ export default function UploadPage() {
   const inputBg = darkMode ? "#3f3f46" : "#ffd0d0";
   const border = darkMode ? "1px solid #3f0000" : "1px solid #ffb3b3";
 
+  async function compressPDF(file: File): Promise<File> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfjsLib: any = await import("pdfjs-dist");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        "pdfjs-dist/build/pdf.worker.min.mjs",
+        import.meta.url
+      ).toString();
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      const jpegPages: Blob[] = [];
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const viewport = page.getViewport({ scale: 0.6 });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d");
+
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
+        const blob = await new Promise<Blob>((res) =>
+          canvas.toBlob((b) => res(b!), "image/jpeg", 0.3)
+        );
+        jpegPages.push(blob);
+      }
+
+      const { PDFDocument } = await import("pdf-lib");
+      const newPdf = await PDFDocument.create();
+
+      for (const blob of jpegPages) {
+        const imgBytes = new Uint8Array(await blob.arrayBuffer());
+        const img = await newPdf.embedJpg(imgBytes);
+        const page = newPdf.addPage([img.width, img.height]);
+        page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+      }
+
+      const compressedBytes = await newPdf.save();
+      const compressed = new File(
+        [compressedBytes.buffer as ArrayBuffer],
+        file.name,
+        { type: "application/pdf" }
+      );
+
+      console.log(
+        `PDF: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressed.size / 1024 / 1024).toFixed(2)}MB`
+      );
+
+      return compressed.size < file.size ? compressed : file;
+    } catch (err) {
+      console.log("PDF compression failed, using original:", err);
+      return file;
+    }
+  }
+  async function compressImage(file: File): Promise<File> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1920;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          const scale = MAX / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            URL.revokeObjectURL(url);
+            if (!blob || blob.size >= file.size) {
+              resolve(file);
+            } else {
+              resolve(new File([blob], file.name, { type: "image/jpeg" }));
+            }
+          },
+          "image/jpeg",
+          0.75
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   async function uploadNote() {
+    if (!file) return alert("Select file");
+    if (!title) return alert("Enter Title!");
+    if (!subject) return alert("Enter Subject!");
+
     setProgress(0);
     setUploading(true);
 
@@ -33,12 +130,7 @@ export default function UploadPage() {
       setProgress((old) => (old >= 90 ? old : old + Math.random() * 10));
     }, 200);
 
-    if (!file) return alert("Select file");
-    if (!title) return alert("Enter Title!");
-    if (!subject) return alert("Enter Subject!");
-
     try {
-      // AUTH
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Login karo pehle!");
 
@@ -48,10 +140,21 @@ export default function UploadPage() {
         .eq("id", user.id)
         .single();
 
-      // TELEGRAM UPLOAD
+      let finalFile = file;
+      if (file.type === "application/pdf") {
+        finalFile = await compressPDF(file);
+      } else if (file.type.startsWith("image/")) {
+        finalFile = await compressImage(file);
+      }
+
+      const MAX_SIZE = 10 * 1024 * 1024;
+      if (finalFile.size > MAX_SIZE) {
+        throw new Error(`File too large (${(finalFile.size / 1024 / 1024).toFixed(1)}MB). 10MB se chhota chahiye.`);
+      }
+
       const form = new FormData();
-      form.append("chat_id", "-1003724740509"); // 🔥 FIXED (no placeholder)
-      form.append("document", file);
+      form.append("chat_id", "-1003724740509");
+      form.append("document", finalFile);
       form.append(
         "caption",
         `📚 New Note Uploaded!\n\n📌 Title: ${title}\n📘 Subject: ${subject}`
@@ -59,56 +162,38 @@ export default function UploadPage() {
 
       const tgRes = await fetch(
         `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/sendDocument`,
-        {
-          method: "POST",
-          body: form,
-        }
+        { method: "POST", body: form }
       );
 
       const tgData = await tgRes.json();
+      if (!tgData.ok) throw new Error(tgData.description || "Telegram upload failed");
 
-      if (!tgData.ok) {
-        throw new Error(tgData.description || "Telegram upload failed");
-      }
-
-      // 🔥 FIX: correct file_id extraction
       const file_id = tgData?.result?.document?.file_id || null;
-      
 
-      // SUPABASE
-      const { error: dbError } = await supabase.from("notes").insert([
-        {
-          title,
-          subject,
-          uploader_id: user.id,
-          class_name: profile?.class_name,
-          section: profile?.section,
-          file_id,
-        },
-      ]);
-
+      const { error: dbError } = await supabase.from("notes").insert([{
+        title,
+        subject,
+        uploader_id: user.id,
+        class_name: profile?.class_name,
+        section: profile?.section,
+        file_id,
+      }]);
       if (dbError) throw dbError;
 
-      // XP
       const { data: profileData } = await supabase
         .from("profiles")
         .select("xp")
         .eq("id", user.id)
         .single();
 
-      const newXp = (profileData?.xp || 0) + 20;
-
       await supabase
         .from("profiles")
-        .update({ xp: newXp })
+        .update({ xp: (profileData?.xp || 0) + 20 })
         .eq("id", user.id);
 
       clearInterval(interval);
       setProgress(100);
-
-      setTimeout(() => {
-        router.push("/feed");
-      }, 500);
+      setTimeout(() => router.push("/feed"), 500);
 
     } catch (err: any) {
       clearInterval(interval);
@@ -128,7 +213,6 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen relative transition-all duration-500" style={{background: bg, color: textColor}}>
 
-      {/* UI - NOT TOUCHED */}
       <button
         onClick={() => setDarkMode(!darkMode)}
         className="px-4 py-2 rounded-2xl font-bold transition-all duration-300 hover:scale-105"
@@ -158,7 +242,6 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* UI EXACT SAME */}
         <div className="p-8 rounded-3xl w-96 transition-all duration-500" style={{background: cardBg, border}}>
 
           <div className="mb-6">
@@ -194,7 +277,7 @@ export default function UploadPage() {
           <label className="block mb-4">
             <div className={`p-4 rounded-xl transition-all duration-300 transform text-center ${uploading ? "opacity-50 cursor-not-allowed" : "hover:scale-105 cursor-pointer"}`}
               style={{background: inputBg, border, color: subTextColor}}>
-              Choose File 
+              Choose File
               <p>(only PDF and images allowed!)</p>
             </div>
             <input type="file" className="hidden" disabled={uploading} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />

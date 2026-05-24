@@ -23,8 +23,11 @@ export default function ChatPage() {
   const [profile, setProfile] = useState<any>(null);
   const [profileCache, setProfileCache] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const typingChannelRef = useRef<any>(null);
+  const typingTimeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   const bg = darkMode
     ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"
@@ -78,6 +81,34 @@ export default function ChatPage() {
     setProfileCache(map);
 
     fetchMessages(profileData.class_name, profileData.section);
+
+    // Typing channel — same name as mobile so dono sync rahein
+    const tChannel = supabase.channel(
+      `typing-${profileData.class_name}-${profileData.section}`
+    );
+
+    tChannel
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload.user_id === user.id) return;
+
+        const name = payload.name as string;
+
+        setTypingUsers((prev) =>
+          prev.includes(name) ? prev : [...prev, name]
+        );
+
+        if (typingTimeoutsRef.current[name]) {
+          clearTimeout(typingTimeoutsRef.current[name]);
+        }
+
+        typingTimeoutsRef.current[name] = setTimeout(() => {
+          setTypingUsers((prev) => prev.filter((n) => n !== name));
+        }, 2500);
+      })
+      .subscribe();
+
+    typingChannelRef.current = tChannel;
+
     setLoading(false);
   }
 
@@ -89,6 +120,21 @@ export default function ChatPage() {
       .eq("section", section)
       .order("created_at", { ascending: true });
     setMessages((data || []) as unknown as Message[]);
+  }
+
+  function handleTyping(e: React.ChangeEvent<HTMLInputElement>) {
+    setText(e.target.value);
+
+    if (!typingChannelRef.current || !profile || !userId) return;
+
+    typingChannelRef.current.send({
+      type: "broadcast",
+      event: "typing",
+      payload: {
+        user_id: userId,
+        name: profile.full_name,
+      },
+    });
   }
 
   async function sendMessage() {
@@ -113,12 +159,12 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-screen transition-all duration-500" style={{background: bg, color: textColor}}>
 
-      {/* HEADER — fixed, scroll nahi hoga */}
+      {/* HEADER */}
       <div className="shrink-0 px-4 pb-2" style={{paddingTop: "20px"}}>
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs md:text-sm font-medium tracking-widest uppercase mb-1" style={{color: subTextColor}}>Real-time</p>
-            <h1 className=" text-3xl md:text-5xl font-bold">Class Chat 💬</h1>
+            <h1 className="text-3xl md:text-5xl font-bold">Class Chat 💬</h1>
             <div className="h-0.5 w-16 rounded-full mt-2" style={{background: "linear-gradient(90deg, #8b0000, transparent)"}} />
           </div>
           <button
@@ -131,14 +177,14 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* MESSAGES — scrollable */}
+      {/* MESSAGES */}
       <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3">
         {messages.map((msg) => {
           const isMe = msg.user_id === userId;
           return (
             <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
               <div
-                className="max-w-[70%] px-4 py-2 rounded-2xl shadow-md"
+                className="max-w-[70%] px-4 py-2 shadow-md"
                 style={{
                   background: isMe ? myMsgBg : otherMsgBg,
                   color: isMe ? "#fff" : textColor,
@@ -159,11 +205,32 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* INPUT — fixed bottom */}
+      {/* TYPING INDICATOR */}
+      {typingUsers.length > 0 && (
+        <div className="px-4 py-1">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl text-xs"
+            style={{ background: otherMsgBg, color: subTextColor }}
+          >
+            <span>
+              {typingUsers.length === 1
+                ? `${typingUsers[0]} typing`
+                : `${typingUsers.join(", ")} typing`}
+            </span>
+            <span className="flex gap-0.5 items-center">
+              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "0ms" }} />
+              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "150ms" }} />
+              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "300ms" }} />
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* INPUT */}
       <div className="shrink-0 flex gap-3 px-4 pb-6 pt-2">
         <input
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleTyping}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           placeholder="Type message..."
           className="flex-1 p-4 rounded-2xl outline-none transition-all duration-300"

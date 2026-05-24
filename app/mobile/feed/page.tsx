@@ -251,7 +251,7 @@ export default function MobileFeedPage() {
                           </p>
                           {note.likes >= 3 && (
                             <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{background: "linear-gradient(135deg, #6b0000, #3d0000)", color: "#ffd700"}}>
-                              ⭐ Best!
+                              ⭐ Students choice!
                             </span>
                           )}
                         </div>

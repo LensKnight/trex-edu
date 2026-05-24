@@ -24,11 +24,13 @@ export default function MobileChatPage() {
   const [profile, setProfile] = useState<any>(null);
   const [profileCache, setProfileCache] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const typingChannelRef = useRef<any>(null);
+  const typingTimeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
 
-  // ✅ FIX 1: clean vh handling only (NO visualViewport hack)
   useEffect(() => {
     const updateVH = () => {
       document.documentElement.style.setProperty(
@@ -42,9 +44,6 @@ export default function MobileChatPage() {
 
     return () => window.removeEventListener("resize", updateVH);
   }, []);
-
-  // ❌ REMOVED: touchmove blocker (breaks Chrome keyboard)
-  // ❌ REMOVED: visualViewport offset (causes lag jump)
 
   const bg = darkMode
     ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"
@@ -69,7 +68,6 @@ export default function MobileChatPage() {
     ? "1px solid #3f0000"
     : "1px solid #ffb3b3";
 
-  // 🔥 FIX 2: smooth WhatsApp-style auto scroll (stable)
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -148,6 +146,35 @@ export default function MobileChatPage() {
 
     await fetchMessages(profileData.class_name, profileData.section);
 
+    // Typing channel setup
+    const tChannel = supabase.channel(
+      `typing-${profileData.class_name}-${profileData.section}`
+    );
+
+    tChannel
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload.user_id === user.id) return;
+
+        const name = payload.name as string;
+
+        setTypingUsers((prev) =>
+          prev.includes(name) ? prev : [...prev, name]
+        );
+
+        // Pehle wala timeout clear karo
+        if (typingTimeoutsRef.current[name]) {
+          clearTimeout(typingTimeoutsRef.current[name]);
+        }
+
+        // 2.5 second baad remove karo
+        typingTimeoutsRef.current[name] = setTimeout(() => {
+          setTypingUsers((prev) => prev.filter((n) => n !== name));
+        }, 2500);
+      })
+      .subscribe();
+
+    typingChannelRef.current = tChannel;
+
     setLoading(false);
   }
 
@@ -169,6 +196,21 @@ export default function MobileChatPage() {
       .order("created_at", { ascending: true });
 
     setMessages((data || []) as unknown as Message[]);
+  }
+
+  function handleTyping(e: React.ChangeEvent<HTMLInputElement>) {
+    setText(e.target.value);
+
+    if (!typingChannelRef.current || !profile || !userId) return;
+
+    typingChannelRef.current.send({
+      type: "broadcast",
+      event: "typing",
+      payload: {
+        user_id: userId,
+        name: profile.full_name,
+      },
+    });
   }
 
   async function sendMessage() {
@@ -277,8 +319,29 @@ export default function MobileChatPage() {
         <div ref={bottomRef} />
       </div>
 
+      {/* TYPING INDICATOR */}
+      {typingUsers.length > 0 && (
+        <div className="fixed left-0 right-0 px-5 z-40 bottom-42">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl text-xs"
+            style={{ background: otherMsgBg, color: subTextColor }}
+          >
+            <span>
+              {typingUsers.length === 1
+                ? `${typingUsers[0]} typing`
+                : `${typingUsers.join(", ")} typing`}
+            </span>
+            <span className="flex gap-0.5 items-center">
+              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "0ms" }} />
+              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "150ms" }} />
+              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "300ms" }} />
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* INPUT */}
-      <div className="fixed left-0 right-0 px-3 z-40 bottom-18">
+      <div className="fixed left-0 right-0 px-3 z-40 bottom-24">
         <div
           className="flex items-end gap-2 p-2 rounded-[28px] backdrop-blur-xl"
           style={{
@@ -290,7 +353,7 @@ export default function MobileChatPage() {
         >
           <input
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={handleTyping}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Type message..."
             className="flex-1 px-4 py-3 rounded-2xl outline-none text-sm"
@@ -325,98 +388,32 @@ export default function MobileChatPage() {
             : "rgba(255,245,245,0.7)",
           border,
           backdropFilter: "blur(18px)",
-          WebkitBackdropFilter:
-            "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
         }}
-        >
-        <a
-          href="/mobile/dashboard"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            🏠
-          </span>
-
-          <span
-            className="text-[10px]"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Home
-          </span>
+      >
+        <a href="/mobile/dashboard" className="flex flex-col items-center gap-1">
+          <span className="text-xl">🏠</span>
+          <span className="text-[10px]" style={{ color: subTextColor }}>Home</span>
         </a>
 
-        <a
-          href="/mobile/feed"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            📚
-          </span>
-
-          <span
-            className="text-[10px]"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Notes
-          </span>
+        <a href="/mobile/feed" className="flex flex-col items-center gap-1">
+          <span className="text-xl">📚</span>
+          <span className="text-[10px]" style={{ color: subTextColor }}>Notes</span>
         </a>
 
-        <a
-          href="/mobile/upload"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            ➕
-          </span>
-
-          <span
-            className="text-[10px]"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Upload
-          </span>
+        <a href="/mobile/upload" className="flex flex-col items-center gap-1">
+          <span className="text-xl">➕</span>
+          <span className="text-[10px]" style={{ color: subTextColor }}>Upload</span>
         </a>
 
-        <a
-          href="/mobile/chat"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            💬
-          </span>
-
-          <span
-            className="text-[10px]"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Chat
-          </span>
+        <a href="/mobile/chat" className="flex flex-col items-center gap-1">
+          <span className="text-xl">💬</span>
+          <span className="text-[10px]" style={{ color: subTextColor }}>Chat</span>
         </a>
 
-        <a
-          href="/mobile/profile"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            👤
-          </span>
-
-          <span
-            className="text-[10px]"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Profile
-          </span>
+        <a href="/mobile/profile" className="flex flex-col items-center gap-1">
+          <span className="text-xl">👤</span>
+          <span className="text-[10px]" style={{ color: subTextColor }}>Profile</span>
         </a>
       </div>
     </div>
