@@ -6,6 +6,7 @@ import "./globals.css";
 import Sidebar from "../components/Sidebar";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/next";
 
 
 export default function RootLayout({
@@ -66,6 +67,7 @@ export default function RootLayout({
             )}
           </ThemedBody>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
