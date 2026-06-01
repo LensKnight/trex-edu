@@ -12,6 +12,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Trophy } from "lucide-react";
+import { FileText } from "lucide-react";
 
 type Note = {
   id: string;
@@ -388,22 +390,6 @@ export default function DashboardPage() {
               }}
             ></div>
           </div>
-
-          <button
-            onClick={() =>
-              setDarkMode(!darkMode)
-            }
-            className="px-3 py-2 md:px-4 md:py-2 rounded-2xl font-bold transition-all duration-300 hover:scale-105 text-sm md:text-base"
-            style={{
-              background: darkMode
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)",
-
-              color: textColor,
-            }}
-          >
-            {darkMode ? "☀️" : "🌙"}
-          </button>
         </div>
 
         {/* Stats */}
@@ -463,8 +449,10 @@ export default function DashboardPage() {
               background: cardBg,
             }}
           >
-            <h2 className="text-xl md:text-2xl font-bold mb-2">
-              🏆 Leaderboard
+            <h2 className="text-xl md:text-2xl font-bold mb-2 flex items-center gap-2">
+              <Trophy size={22} 
+              color={darkMode ? "#FFD700" : "#B8860B"} />
+              Leaderboard
             </h2>
 
             <p
@@ -537,8 +525,9 @@ export default function DashboardPage() {
               background: cardBg,
             }}
           >
-            <h2 className="text-xl md:text-2xl font-bold mb-4">
-              📊 Notes by Subject
+            <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+              <FileText size={22} />
+              Notes by Subject
             </h2>
 
             {chartData.length >
@@ -726,7 +715,7 @@ export default function DashboardPage() {
                                   note.file_url
                                 }
                                 target="_blank"
-                                className="px-2 md:px-3 py-2 rounded-xl text-xs md:text-sm transition hover:scale-105"
+                                className="px-2 md:px-3 py-2 rounded-xl text-xs md:text-sm transition hover:scale-103"
                                 style={{
                                   background:
                                     darkMode
@@ -748,7 +737,7 @@ export default function DashboardPage() {
                                     note
                                   )
                                 }
-                                className="bg-red-600 px-2 md:px-3 py-2 rounded-xl text-xs md:text-sm hover:bg-red-700 hover:scale-105 transition-all duration-300 text-white"
+                                className="bg-red-600 px-2 md:px-3 py-2 rounded-xl text-xs md:text-sm hover:bg-red-700 hover:scale-103 transition-all duration-300 text-white"
                               >
                                 Delete
                               </button>
@@ -822,7 +811,7 @@ export default function DashboardPage() {
                     null
                   )
                 }
-                className="flex-1 p-3 rounded-2xl hover:scale-105 transition-all duration-300 font-bold text-sm"
+                className="flex-1 p-3 rounded-2xl hover:scale-103 transition-all duration-300 font-bold text-sm"
                 style={{
                   background:
                     darkMode
@@ -840,7 +829,7 @@ export default function DashboardPage() {
                 onClick={
                   confirmDelete
                 }
-                className="flex-1 bg-red-600 p-3 rounded-2xl hover:bg-red-700 hover:scale-105 transition-all duration-300 font-bold text-white text-sm"
+                className="flex-1 bg-red-600 p-3 rounded-2xl hover:bg-red-700 hover:scale-103 transition-all duration-300 font-bold text-white text-sm"
               >
                 Delete
               </button>

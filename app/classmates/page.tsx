@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../src/lib/supabase";
 import { useTheme } from "../../src/context/ThemeContext";
+import {
+  User,
+} from "lucide-react";
+
 
 export default function ClassmatesPage() {
   const { darkMode, setDarkMode } = useTheme();
@@ -51,13 +55,6 @@ export default function ClassmatesPage() {
           <h1 className="text-3xl md:text-5xl font-bold">Your Classmates</h1>
           <div className="h-0.5 w-16 md:w-24 rounded-full mt-2" style={{background: "linear-gradient(90deg, #8b0000, transparent)"}} />
         </div>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-3 py-2 rounded-2xl font-bold transition-all duration-300 hover:scale-105 text-sm"
-          style={{background: darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", color: textColor}}
-        >
-          {darkMode ? "☀️" : "🌙"}
-        </button>
       </div>
 
       {/* Search */}
@@ -81,7 +78,7 @@ export default function ClassmatesPage() {
               className="p-4 rounded-2xl hover:scale-103 transition-all duration-300 cursor-pointer"
               style={{background: cardBg, border}}
             >
-              <h2 className="text-lg font-bold">🌐 {student.full_name}</h2>
+              <h2 className="text-lg font-bold"><User size={20} /> {student.full_name}</h2>
               <p className="text-sm mt-1" style={{color: subTextColor}}>Class: {student.class_name}</p>
               <p className="text-sm" style={{color: subTextColor}}>Section: {student.section}</p>
               <p className="text-xs mt-2" style={{color: subTextColor}}>Roll No: {student.roll_no}</p>

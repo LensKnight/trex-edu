@@ -4,6 +4,21 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../src/lib/supabase";
 import useAuth from "../../../src/hooks/useAuth";
 import { useTheme } from "../../../src/context/ThemeContext";
+import {
+  LayoutDashboard,
+  BookOpen,
+  PlusSquare,
+  MessageCircle,
+  CircleUserRound,
+  Megaphone,
+  Moon,
+  Sun,
+  FileText,
+  Zap,
+  Heart,
+  Trophy,
+  Trash2,
+} from "lucide-react";
 
 type Note = {
   id: string;
@@ -328,25 +343,8 @@ export default function MobileDashboardPage() {
                 backdropFilter: "blur(12px)",
               }}
             >
-              📢
+              <Megaphone size={18} />
             </a>
-
-            {/* Theme Button */}
-            <button
-              onClick={() =>
-                setDarkMode(!darkMode)
-              }
-              className="p-2 rounded-xl text-sm"
-              style={{
-                background: darkMode
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.1)",
-                color: textColor,
-              }}
-            >
-              {darkMode ? "☀️" : "🌙"}
-            </button>
-
           </div>
         </div>
 
@@ -356,18 +354,19 @@ export default function MobileDashboardPage() {
             {
               label: "Notes",
               value: notesCount,
-              icon: "📄",
+              icon: <FileText size={20} />,
             },
             {
               label: "XP",
               value: xp,
-              icon: "⚡",
+              icon: <Zap size={20} />,
             },
             {
               label: "Likes",
               value: totalLikes,
-              icon: "❤️",
+              icon: <Heart size={20} />,
             },
+
           ].map((stat) => (
             <div
               key={stat.label}
@@ -376,9 +375,9 @@ export default function MobileDashboardPage() {
                 background: cardBg,
               }}
             >
-              <p className="text-lg">
+              <div className="flex justify-center mb-1">
                 {stat.icon}
-              </p>
+              </div>
 
               <p className="text-xl font-bold">
                 {stat.value}
@@ -404,7 +403,11 @@ export default function MobileDashboardPage() {
           }}
         >
           <h2 className="text-lg font-bold mb-1">
-            🏆 Leaderboard
+            <div className="flex items-center gap-2">
+              <Trophy size={18} 
+              color={darkMode ? "#FFD700" : "#B8860B"} />
+              <span>Leaderboard</span>
+            </div>
           </h2>
 
           <p
@@ -581,9 +584,9 @@ export default function MobileDashboardPage() {
                                   note
                                 )
                               }
-                              className="bg-red-600 px-2 py-1 rounded-lg text-xs text-white"
+                              className="bg-red-600 px-2 py-1 rounded-lg text-white flex items-center justify-center"
                             >
-                              Del
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </div>
@@ -615,7 +618,7 @@ export default function MobileDashboardPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            🏠
+            <LayoutDashboard size={22} />
           </span>
 
           <span
@@ -633,7 +636,7 @@ export default function MobileDashboardPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            📚
+            <BookOpen size={22} />
           </span>
 
           <span
@@ -651,7 +654,7 @@ export default function MobileDashboardPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            ➕
+            <PlusSquare size={22} />
           </span>
 
           <span
@@ -669,7 +672,7 @@ export default function MobileDashboardPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            💬
+            <MessageCircle size={22} />
           </span>
 
           <span
@@ -687,7 +690,7 @@ export default function MobileDashboardPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            👤
+            <CircleUserRound size={22} />
           </span>
 
           <span

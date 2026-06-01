@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { supabase } from "../src/lib/supabase";
 import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
+
 
 export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+
 
   async function login() {
     if (!username) return alert("Enter Username!");
@@ -23,7 +26,7 @@ export default function AuthPage() {
     if (error) {
       alert("Username or Password is incorrect!");
     } else {
-      router.push("/dashboard");
+      redirect("/mobile/dashboard");
     }
   }
 

@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../src/lib/supabase";
 import { useTheme } from "../../../src/context/ThemeContext";
+import {
+  LayoutDashboard,
+  BookOpen,
+  PlusSquare,
+  MessageCircle,
+  CircleUserRound,
+} from "lucide-react";
 
 export default function MobileClassmatesPage() {
   const { darkMode, setDarkMode } = useTheme();
@@ -51,13 +58,6 @@ export default function MobileClassmatesPage() {
           <h1 className="text-2xl font-bold">Classmates</h1>
           <div className="mt-1 h-0.5 w-12 rounded-full" style={{background: "linear-gradient(90deg, #8b0000, transparent)"}} />
         </div>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="p-2 rounded-xl text-sm"
-          style={{background: darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", color: textColor}}
-        >
-          {darkMode ? "☀️" : "🌙"}
-        </button>
       </div>
 
       {/* Search */}
@@ -142,26 +142,106 @@ export default function MobileClassmatesPage() {
       )}
 
       {/* Bottom Nav */}
-      <div className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl" style={{background: darkMode ? "#0d0000" : "#fff5f5", border}}>
-        <a href="/mobile/dashboard" className="flex flex-col items-center gap-1">
-          <span className="text-xl">⚡</span>
-          <span className="text-xs" style={{color: subTextColor}}>Home</span>
+      <div
+        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl glass"
+        style={{
+          background: darkMode
+            ? "rgba(13,0,0,0.75)"
+            : "rgba(255,245,245,0.7)",
+          border,
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter:
+            "blur(18px)",
+        }}
+      >
+        <a
+          href="/mobile/dashboard"
+          className="flex flex-col items-center gap-1"
+        >
+          <span className="text-xl">
+            <LayoutDashboard size={22} />
+          </span>
+
+          <span
+            className="text-xs"
+            style={{
+              color: subTextColor,
+            }}
+          >
+            Home
+          </span>
         </a>
-        <a href="/mobile/feed" className="flex flex-col items-center gap-1">
-          <span className="text-xl">📚</span>
-          <span className="text-xs" style={{color: subTextColor}}>Feed</span>
+
+        <a
+          href="/mobile/feed"
+          className="flex flex-col items-center gap-1"
+        >
+          <span className="text-xl">
+            <BookOpen size={22} />
+          </span>
+
+          <span
+            className="text-xs"
+            style={{
+              color: subTextColor,
+            }}
+          >
+            Notes
+          </span>
         </a>
-        <a href="/mobile/upload" className="flex flex-col items-center gap-1">
-          <span className="text-xl">📤</span>
-          <span className="text-xs" style={{color: subTextColor}}>Upload</span>
+
+        <a
+          href="/mobile/upload"
+          className="flex flex-col items-center gap-1"
+        >
+          <span className="text-xl">
+            <PlusSquare size={22} />
+          </span>
+
+          <span
+            className="text-xs"
+            style={{
+              color: subTextColor,
+            }}
+          >
+            Upload
+          </span>
         </a>
-        <a href="/mobile/chat" className="flex flex-col items-center gap-1">
-          <span className="text-xl">💬</span>
-          <span className="text-xs" style={{color: subTextColor}}>Chat</span>
+
+        <a
+          href="/mobile/chat"
+          className="flex flex-col items-center gap-1"
+        >
+          <span className="text-xl">
+            <MessageCircle size={22} />
+          </span>
+
+          <span
+            className="text-xs"
+            style={{
+              color: subTextColor,
+            }}
+          >
+            Chat
+          </span>
         </a>
-        <a href="/mobile/profile" className="flex flex-col items-center gap-1">
-          <span className="text-xl">👤</span>
-          <span className="text-xs" style={{color: subTextColor}}>Profile</span>
+
+        <a
+          href="/mobile/profile"
+          className="flex flex-col items-center gap-1"
+        >
+          <span className="text-xl">
+            <CircleUserRound size={22} />
+          </span>
+
+          <span
+            className="text-xs"
+            style={{
+              color: subTextColor,
+            }}
+          >
+            Profile
+          </span>
         </a>
       </div>
     </div>

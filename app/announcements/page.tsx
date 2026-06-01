@@ -54,13 +54,6 @@ export default function AnnouncementsPage() {
           <h1 className="text-3xl md:text-5xl font-bold">📢 Announcements</h1>
           <div className="mt-2 h-0.5 w-16 md:w-24 rounded-full" style={{background: "linear-gradient(90deg, #8b0000, transparent)"}} />
         </div>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-3 py-2 rounded-2xl font-bold transition-all duration-300 hover:scale-105 text-sm"
-          style={{background: darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", color: textColor}}
-        >
-          {darkMode ? "☀️" : "🌙"}
-        </button>
       </div>
 
       {/* Announcements */}

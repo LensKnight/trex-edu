@@ -8,6 +8,9 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
 
+
+
+
 export default function RootLayout({
   children,
 }: {

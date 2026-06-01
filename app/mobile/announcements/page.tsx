@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../src/lib/supabase";
 import { useTheme } from "../../../src/context/ThemeContext";
 import useAuth from "../../../src/hooks/useAuth";
+import {
+  LayoutDashboard,
+  BookOpen,
+  PlusSquare,
+  MessageCircle,
+  CircleUserRound,
+  Megaphone,
+} from "lucide-react";
 
 type Announcement = {
   id: string;
@@ -117,7 +125,7 @@ export default function MobileAnnouncementsPage() {
             </p>
 
             <h1 className="text-2xl font-bold">
-              📢 Announcements
+             Announcements 
             </h1>
 
             <div
@@ -129,20 +137,6 @@ export default function MobileAnnouncementsPage() {
             />
           </div>
 
-          <button
-            onClick={() =>
-              setDarkMode(!darkMode)
-            }
-            className="p-2 rounded-xl text-sm transition-all duration-300"
-            style={{
-              background: darkMode
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)",
-              color: textColor,
-            }}
-          >
-            {darkMode ? "☀️" : "🌙"}
-          </button>
         </div>
 
         {/* ANNOUNCEMENTS */}
@@ -151,7 +145,7 @@ export default function MobileAnnouncementsPage() {
           {announcements.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center pt-24">
               <p className="text-5xl mb-4">
-                📭
+                <Megaphone size={48} />
               </p>
 
               <p
@@ -191,7 +185,7 @@ export default function MobileAnnouncementsPage() {
                           : "linear-gradient(135deg, #ffb3b3, #ff8080)",
                     }}
                   >
-                    📢
+                    <Megaphone size={18} />
                   </div>
 
                   <div>
@@ -244,9 +238,9 @@ export default function MobileAnnouncementsPage() {
         </div>
       </div>
 
-      {/* BOTTOM NAV */}
+      {/* Bottom Nav */}
       <div
-        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-50 rounded-3xl glass"
+        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl glass"
         style={{
           background: darkMode
             ? "rgba(13,0,0,0.75)"
@@ -262,11 +256,11 @@ export default function MobileAnnouncementsPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            🏠
+            <LayoutDashboard size={22} />
           </span>
 
           <span
-            className="text-[10px]"
+            className="text-xs"
             style={{
               color: subTextColor,
             }}
@@ -280,11 +274,11 @@ export default function MobileAnnouncementsPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            📚
+            <BookOpen size={22} />
           </span>
 
           <span
-            className="text-[10px]"
+            className="text-xs"
             style={{
               color: subTextColor,
             }}
@@ -298,11 +292,11 @@ export default function MobileAnnouncementsPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            ➕
+            <PlusSquare size={22} />
           </span>
 
           <span
-            className="text-[10px]"
+            className="text-xs"
             style={{
               color: subTextColor,
             }}
@@ -316,11 +310,11 @@ export default function MobileAnnouncementsPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            💬
+            <MessageCircle size={22} />
           </span>
 
           <span
-            className="text-[10px]"
+            className="text-xs"
             style={{
               color: subTextColor,
             }}
@@ -334,11 +328,11 @@ export default function MobileAnnouncementsPage() {
           className="flex flex-col items-center gap-1"
         >
           <span className="text-xl">
-            👤
+            <CircleUserRound size={22} />
           </span>
 
           <span
-            className="text-[10px]"
+            className="text-xs"
             style={{
               color: subTextColor,
             }}
