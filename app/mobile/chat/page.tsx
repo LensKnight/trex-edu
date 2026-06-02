@@ -10,6 +10,7 @@ import {
   MessageCircle,
   CircleUserRound,
 } from "lucide-react";
+import MobileNavbar from "@/components/MobileNavbar";
 
 type Message = {
   id: string;
@@ -240,22 +241,16 @@ export default function MobileChatPage() {
     setText("");
   }
 
-  if (loading)
-    return (
-      <div className="loading-screen">
-        <img src="/toggle-icon.png" className="loading-x" alt="loading" />
-        <div className="loading-text">Loading Chat</div>
-      </div>
-    );
-
   return (
     <div
-      className="flex flex-col h-dvh"
-      style={{
-        background: bg,
-        color: textColor,
-      }}
-    >
+      className="flex flex-col h-dvh" style={{ background: bg, color: textColor,}}>
+        {loading && (
+          <div className="loading-screen">
+            <img src="/toggle-icon.png" className="loading-x" alt="loading" />
+            <div className="loading-text">Loading Chats</div>
+          </div>
+        )}
+
       {/* HEADER */}
       <div className="shrink-0 px-4 pt-5 pb-3">
         <div className="flex items-start justify-between">
@@ -375,109 +370,11 @@ export default function MobileChatPage() {
         </div>
       </div>
 
-      {/* Bottom Nav */}
-      <div
-        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl glass"
-        style={{
-          background: darkMode
-            ? "rgba(13,0,0,0.75)"
-            : "rgba(255,245,245,0.7)",
-          border,
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter:
-            "blur(18px)",
-        }}
-      >
-        <a
-          href="/mobile/dashboard"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <LayoutDashboard size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Home
-          </span>
-        </a>
-
-        <a
-          href="/mobile/feed"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <BookOpen size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Notes
-          </span>
-        </a>
-
-        <a
-          href="/mobile/upload"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <PlusSquare size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Upload
-          </span>
-        </a>
-
-        <a
-          href="/mobile/chat"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <MessageCircle size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Chat
-          </span>
-        </a>
-
-        <a
-          href="/mobile/profile"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <CircleUserRound size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Profile
-          </span>
-        </a>
-      </div>
+      <MobileNavbar
+        darkMode={darkMode}
+        subTextColor={subTextColor}
+        border={border}
+      />
     </div>
   );
 }

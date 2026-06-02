@@ -12,7 +12,10 @@ import {
   MessageCircle,
   LogOut,
   ChevronRight,
+  User,
 } from "lucide-react";
+import { useEffect } from "react";
+import useAuth from "../../../src/hooks/useAuth";
 
 export default function MobileSettingsPage() {
   const router = useRouter();
@@ -35,6 +38,14 @@ export default function MobileSettingsPage() {
   const border = darkMode
     ? "1px solid #3f0000"
     : "1px solid #ffb3b3";
+
+  const { session, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !session) {
+      router.push("/");
+    }
+  }, [loading, session, router]);
 
   async function logout() {
     await supabase.auth.signOut();
@@ -247,6 +258,33 @@ export default function MobileSettingsPage() {
         </div>
 
         {/* Logout */}
+        <button
+          onClick={() => router.push("/mobile/profile")}
+          className="
+            w-full
+            p-4
+            rounded-2xl
+            text-white
+            font-bold
+            flex
+            items-center
+            justify-center
+            gap-2
+            transition-all
+            duration-300
+            hover:scale-105
+            active:scale-95
+            mb-4
+          "
+          style={{
+            background:
+              "linear-gradient(135deg,#8b0000,#3d0000)",
+          }}
+        >
+          <User size={18} />
+          Profile
+        </button>
+        
         <button
           onClick={logout}
           className="

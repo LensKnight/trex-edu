@@ -19,7 +19,9 @@ import {
   Sparkles,
   Users,
   LogOut,
+  Settings,
 } from "lucide-react";
+import MobileNavbar from "@/components/MobileNavbar";
 
 export default function MobileProfilePage() {
   const router = useRouter();
@@ -76,23 +78,15 @@ export default function MobileProfilePage() {
     router.push("/");
   }
 
-  if (loading || !profile)
-    return (
-      <div className="loading-screen">
-        <img
-          src="/toggle-icon.png"
-          className="loading-x"
-          alt="loading"
-        />
-        <div className="loading-text">Loading Profile</div>
-      </div>
-    );
-
   return (
     <div
-      className="min-h-screen transition-all duration-500"
-      style={{ background: bg, color: textColor }}
-    >
+      className="min-h-screen transition-all duration-500" style={{ background: bg, color: textColor }} >
+         {loading && (
+          <div className="loading-screen">
+            <img src="/toggle-icon.png" className="loading-x" alt="loading" />
+            <div className="loading-text">Loading Profile</div>
+          </div>
+        )}     
       
       <div className="p-4 pb-24">
 
@@ -117,20 +111,20 @@ export default function MobileProfilePage() {
                   "linear-gradient(90deg, #8b0000, transparent)",
               }}
             />
-          </div>
 
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-xl text-sm"
-            style={{
-              background: darkMode
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.1)",
-              color: textColor,
-            }}
-          >
-            {darkMode ? "☀️" : "🌙"}
-          </button>
+          </div>
+            <a
+              href="/mobile/settings"
+              className="p-2 rounded-xl"
+              style={{
+                background: darkMode
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.1)",
+                color: textColor,
+              }}
+            >
+              <Settings size={20} />
+            </a>
         </div>
 
         {/* Top Card */}
@@ -144,14 +138,14 @@ export default function MobileProfilePage() {
           <img src="/mvmlogo.png" alt="" className="absolute inset-0 w-full h-full object-contain opacity-30 pointer-events-none p-2" />
 
           <h2 className="text-xl font-bold mb-1">
-            {profile.full_name}
+            {profile?.full_name}
           </h2>
 
           <p
             className="text-sm"
             style={{ color: subTextColor }}
           >
-            {profile.class_name} • {profile.section}
+            {profile?.class_name} • {profile?.section}
           </p>
 
           <div className="mt-4 flex items-center justify-center gap-3">
@@ -160,7 +154,7 @@ export default function MobileProfilePage() {
               style={{ background: sectionBg }}
             >
               <p className="text-lg font-bold">
-                {profile.xp}
+                {profile?.xp}
               </p>
               <p
                 className="text-xs"
@@ -179,33 +173,33 @@ export default function MobileProfilePage() {
           {[
             {
                 label: "Class",
-                value: profile.class_name,
+                value: profile?.class_name,
                 icon: <School size={22} />,
               },
               {
                 label: "Stream",
-                value: profile.stream,
+                value: profile?.stream,
                 icon: <GraduationCap size={22} />,
               },
               {
                 label: "Section",
-                value: profile.section,
+                value: profile?.section,
                 icon: <Layers3 size={22} />,
               },
               {
                 label: "Roll Number",
-                value: profile.roll_no,
+                value: profile?.roll_no,
                 icon: <Hash size={22} />,
               },
               {
                 label: "XP Earned",
-                value: `${profile.xp} XP`,
+                value: `${profile?.xp} XP`,
                 icon: <Zap size={22} />,
               },
               {
                 label: "What Describes You?",
                 value:
-                  profile.description ||
+                  profile?.description ||
                   "MVM-IV Student",
                 icon: <Sparkles size={22} />,
               },
@@ -266,109 +260,11 @@ export default function MobileProfilePage() {
         </button>
       </div>
 
-      {/* Bottom Nav */}
-      <div
-        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl glass"
-        style={{
-          background: darkMode
-            ? "rgba(13,0,0,0.75)"
-            : "rgba(255,245,245,0.7)",
-          border,
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter:
-            "blur(18px)",
-        }}
-      >
-        <a
-          href="/mobile/dashboard"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <LayoutDashboard size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Home
-          </span>
-        </a>
-
-        <a
-          href="/mobile/feed"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <BookOpen size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Notes
-          </span>
-        </a>
-
-        <a
-          href="/mobile/upload"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <PlusSquare size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Upload
-          </span>
-        </a>
-
-        <a
-          href="/mobile/chat"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <MessageCircle size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Chat
-          </span>
-        </a>
-
-        <a
-          href="/mobile/profile"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <CircleUserRound size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Profile
-          </span>
-        </a>
-      </div>
+      <MobileNavbar
+        darkMode={darkMode}
+        subTextColor={subTextColor}
+        border={border}
+      />
     </div>
   );
 }

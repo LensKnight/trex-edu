@@ -26,7 +26,16 @@ export default function AuthPage() {
     if (error) {
       alert("Username or Password is incorrect!");
     } else {
-      redirect("/mobile/dashboard");
+      const isMobile =
+        /Android|iPhone|iPad|iPod|Mobi|Opera Mini|IEMobile/i.test(
+          navigator.userAgent
+        );
+
+      if (isMobile) {
+        router.push("/mobile/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
     }
   }
 

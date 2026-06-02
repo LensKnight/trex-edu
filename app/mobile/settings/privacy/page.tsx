@@ -2,6 +2,9 @@
 
 import { useTheme } from "../../../../src/context/ThemeContext";
 import { ArrowLeft, Shield } from "lucide-react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import useAuth from "../../../../src/hooks/useAuth";
 
 export default function PrivacyPage() {
   const { darkMode } = useTheme();
@@ -19,6 +22,15 @@ export default function PrivacyPage() {
   const border = darkMode
     ? "1px solid #3f0000"
     : "1px solid #ffb3b3";
+  
+  const router = useRouter();
+  const { session, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !session) {
+      router.push("/");
+    }
+  }, [loading, session, router]);
 
   return (
     <div

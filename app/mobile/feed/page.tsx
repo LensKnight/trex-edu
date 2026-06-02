@@ -10,7 +10,9 @@ import {
   PlusSquare,
   MessageCircle,
   CircleUserRound,
+  TriangleAlert,
 } from "lucide-react";
+import MobileNavbar from "@/components/MobileNavbar";
 
 type Note = {
   id: string;
@@ -183,7 +185,7 @@ export default function MobileFeedPage() {
     if (error) return alert("Report failed!");
     setReportedNotes((prev) => [...prev, note.id]);
     const { count } = await supabase.from("note_reports").select("*", { count: "exact", head: true }).eq("note_id", note.id);
-    if ((count ?? 0) >= 3) {
+    if ((count ?? 0) >= 10) {
       await supabase.from("notes").delete().eq("id", note.id);
       setNotes((prev) => prev.filter((n) => n.id !== note.id));
       alert("Note removed due to multiple reports!");
@@ -199,15 +201,16 @@ export default function MobileFeedPage() {
 
   const subjects = ["Physics","Chemistry","Mathematics","Computer Science","English","Physical Education"];
 
-  if (loading) return (
-    <div className="loading-screen">
-      <img src="/toggle-icon.png" className="loading-x" alt="loading" />
-      <div className="loading-text">Loading Notes</div>
-    </div>
-  );
+
 
   return (
     <div className="min-h-screen pb-24 transition-all duration-500" style={{background: bg, color: textColor}}>
+        {loading && (
+          <div className="loading-screen">
+            <img src="/toggle-icon.png" className="loading-x" alt="loading" />
+            <div className="loading-text">Loading Notes</div>
+          </div>
+        )}
 
       {/* Header */}
       <div className="flex items-center justify-between p-4 pt-6">
@@ -246,10 +249,17 @@ export default function MobileFeedPage() {
                   return (
                     <div key={note.id} className="p-4 rounded-2xl" style={{background: cardBg, border}}>
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs font-medium" style={{color: subTextColor}}>
-                            {isOwn ? "📝 You" : `👤 ${note.uploader_name}`}
-                          </p>
-                          {note.likes >= 3 && (
+                          <div
+                            className="flex items-center gap-1"
+                            style={{ color: subTextColor }}
+                          >
+                            <CircleUserRound size={13} />
+
+                            <p className="text-xs font-medium">
+                              {isOwn ? "You" : note.uploader_name}
+                            </p>
+                          </div>
+                          {note.likes >= 10 && (
                             <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{background: "linear-gradient(135deg, #6b0000, #3d0000)", color: "#ffd700"}}>
                               ⭐ Students choice!
                             </span>
@@ -288,7 +298,7 @@ export default function MobileFeedPage() {
                               cursor: alreadyReported ? "not-allowed" : "pointer",
                             }}
                           >
-                            {alreadyReported ? "Reported" : "🚩"}
+                            {alreadyReported ? "Reported" : <TriangleAlert size={12} />}
                           </button>
                         )}
                       </div>
@@ -308,109 +318,11 @@ export default function MobileFeedPage() {
         )}
       </div>
 
-      {/* Bottom Nav */}
-      <div
-        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl glass"
-        style={{
-          background: darkMode
-            ? "rgba(13,0,0,0.75)"
-            : "rgba(255,245,245,0.7)",
-          border,
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter:
-            "blur(18px)",
-        }}
-      >
-        <a
-          href="/mobile/dashboard"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <LayoutDashboard size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Home
-          </span>
-        </a>
-
-        <a
-          href="/mobile/feed"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <BookOpen size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Notes
-          </span>
-        </a>
-
-        <a
-          href="/mobile/upload"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <PlusSquare size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Upload
-          </span>
-        </a>
-
-        <a
-          href="/mobile/chat"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <MessageCircle size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Chat
-          </span>
-        </a>
-
-        <a
-          href="/mobile/profile"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <CircleUserRound size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Profile
-          </span>
-        </a>
-      </div>
+     <MobileNavbar
+        darkMode={darkMode}
+        subTextColor={subTextColor}
+        border={border}
+      /> 
     </div>
   );
 }

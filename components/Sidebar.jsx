@@ -1,9 +1,10 @@
 "use client";
 
-import { useTheme } from "../src/context/ThemeContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../src/lib/supabase";
+import { usePathname } from "next/navigation";
+import { useTheme } from "../src/context/ThemeContext";
 import {
   LayoutDashboard,
   Upload,
@@ -18,6 +19,8 @@ import {
 export default function Sidebar({ collapsed, setCollapsed }) {
   const [profile, setProfile] = useState(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const { darkMode } = useTheme();
 
   useEffect(() => {
     async function fetchProfile() {
@@ -124,24 +127,58 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
       {/* Nav Links */}
       <div className="flex-1 px-2 space-y-1">
-        {navItems.map((item) => (
+      {navItems.map((item) => {
+        const active = pathname === item.href;
+
+        return (
           <a
             key={item.href}
             href={item.href}
-            className="flex items-center p-3 rounded-2xl text-zinc-400 hover:text-white transition-all duration-300 hover:scale-105"
+            className="relative flex items-center p-3 rounded-2xl transition-all duration-300"
             style={{
-              background: "rgba(255,255,255,0.03)",
-              justifyContent: collapsed ? "center" : "flex-start",
+              justifyContent: collapsed
+                ? "center"
+                : "flex-start",
               gap: collapsed ? "0" : "12px",
+
+              background: active
+                ? darkMode
+                  ? "linear-gradient(135deg, rgba(120,0,0,0.45), rgba(60,0,0,0.45))"
+                  : "linear-gradient(135deg, rgba(255,220,220,0.95), rgba(255,190,190,0.95))"
+                : darkMode
+                  ? "rgba(255,255,255,0.03)"
+                  : "rgba(0,0,0,0.03)",
+
+              border: active
+                ? darkMode
+                  ? "1px solid rgba(255,80,80,0.25)"
+                  : "1px solid rgba(255,120,120,0.4)"
+                : "1px solid transparent",
+
+              color: active
+                ? darkMode
+                  ? "#ffffff"
+                  : "#8b0000"
+                : darkMode
+                  ? "#a1a1aa"
+                  : "#666666",
+
+              boxShadow: active
+                ? darkMode
+                  ? "0 0 20px rgba(255,0,0,0.15)"
+                  : "0 4px 20px rgba(255,100,100,0.25)"
+                : "none",
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(100,0,0,0.3)"}
-            onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
             title={collapsed ? item.label : ""}
           >
             <span className="shrink-0">{item.icon}</span>
-            {!collapsed && <span className="font-medium text-sm">{item.label}</span>}
+            {!collapsed && <span className="font-medium text-sm">
+              
+            {item.label}</span>}
           </a>
-        ))}
+        );
+
+      })}
       </div>
 
       {/* Collapsed logout */}

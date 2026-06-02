@@ -15,6 +15,13 @@ type Note = {
   uploader_name?: string;
 };
 
+import {
+  LayoutDashboard,
+  BookOpen,
+  TriangleAlert,
+  CircleUserRound
+} from "lucide-react";
+
 export default function FeedPage() {
   const { session, loading } = useAuth();
   const { darkMode, setDarkMode } = useTheme();
@@ -250,7 +257,7 @@ export default function FeedPage() {
       })
       .eq("note_id", note.id);
 
-    if (count && count >= 3) {
+    if (count && count >= 10) {
       const {
         data: profileData,
         error: profileError,
@@ -350,19 +357,6 @@ export default function FeedPage() {
             }}
           />
         </div>
-
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-3 py-2 md:px-4 md:py-2 rounded-2xl font-bold transition-all duration-300 hover:scale-105 text-sm"
-          style={{
-            background: darkMode
-              ? "rgba(255,255,255,0.1)"
-              : "rgba(0,0,0,0.1)",
-            color: textColor,
-          }}
-        >
-          {darkMode ? "☀️" : "🌙"}
-        </button>
       </div>
 
       {/* Search */}
@@ -427,10 +421,17 @@ export default function FeedPage() {
                     }}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs font-medium" style={{color: subTextColor}}>
-                        {isOwn ? "📝 You" : `👤 ${note.uploader_name}`}
-                      </p>
-                      {note.likes >= 3 && (
+                      <div
+                        className="flex items-center gap-1"
+                        style={{ color: subTextColor }}
+                      >
+                        <CircleUserRound size={13} />
+
+                        <p className="text-xs font-medium">
+                          {isOwn ? "You" : note.uploader_name}
+                        </p>
+                      </div>
+                      {note.likes >= 10 && (
                         <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{background: "linear-gradient(135deg, #6b0000, #3d0000)", color: "#ffd700"}}>
                           ⭐ Students Choice!
                         </span>
@@ -535,7 +536,7 @@ export default function FeedPage() {
                         >
                           {alreadyReported
                             ? "Reported"
-                            : "🚩 Report"}
+                            : <TriangleAlert size={12} />}
                         </button>
                       )}
                     </div>

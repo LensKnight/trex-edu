@@ -16,7 +16,7 @@ export default function useAuth() {
         router.push("/");
       } else {
         setSession(session);
-        setTimeout(() => setLoading(false), 1500);
+        setTimeout(() => setLoading(false), 100);
       }
     }
     checkAuth();

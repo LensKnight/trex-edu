@@ -19,6 +19,7 @@ import {
   Trophy,
   Trash2,
 } from "lucide-react";
+import MobileNavbar from "@/components/MobileNavbar";
 
 type Note = {
   id: string;
@@ -275,8 +276,15 @@ export default function MobileDashboardPage() {
     }
   }
 
-  if (loading)
-    return (
+return (
+  <div
+    className="min-h-screen transition-all duration-500"
+    style={{
+      background: bg,
+      color: textColor,
+    }}
+  >
+    {loading ? (
       <div className="loading-screen">
         <img
           src="/toggle-icon.png"
@@ -284,19 +292,10 @@ export default function MobileDashboardPage() {
           alt="loading"
         />
         <div className="loading-text">
-          Loading
+          Loading Dashboard
         </div>
       </div>
-    );
-
-  return (
-    <div
-      className="min-h-screen transition-all duration-500"
-      style={{
-        background: bg,
-        color: textColor,
-      }}
-    >
+    ) : (
       <div className="p-4 pb-28">
 
         {/* Header */}
@@ -329,8 +328,6 @@ export default function MobileDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
-
-            {/* Announcement Button */}
             <a
               href="/mobile/announcements"
               className="px-3 py-2 rounded-2xl text-xs font-bold transition-all duration-300 active:scale-95"
@@ -366,7 +363,6 @@ export default function MobileDashboardPage() {
               value: totalLikes,
               icon: <Heart size={20} />,
             },
-
           ].map((stat) => (
             <div
               key={stat.label}
@@ -404,8 +400,10 @@ export default function MobileDashboardPage() {
         >
           <h2 className="text-lg font-bold mb-1">
             <div className="flex items-center gap-2">
-              <Trophy size={18} 
-              color={darkMode ? "#FFD700" : "#B8860B"} />
+              <Trophy
+                size={18}
+                color={darkMode ? "#FFD700" : "#B8860B"}
+              />
               <span>Leaderboard</span>
             </div>
           </h2>
@@ -420,48 +418,46 @@ export default function MobileDashboardPage() {
           </p>
 
           <div className="space-y-2">
-            {leaderboard.map(
-              (user, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 rounded-xl"
-                  style={{
-                    background: noteBg,
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-sm font-bold"
-                      style={{
-                        color:
-                          index === 0
-                            ? "#FFD700"
-                            : index === 1
-                            ? "#C0C0C0"
-                            : index === 2
-                            ? "#CD7F32"
-                            : "#888",
-                      }}
-                    >
-                      #{index + 1}
-                    </span>
-
-                    <span className="text-sm font-medium truncate max-w-30">
-                      {user.full_name}
-                    </span>
-                  </div>
-
+            {leaderboard.map((user, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-2 rounded-xl"
+                style={{
+                  background: noteBg,
+                }}
+              >
+                <div className="flex items-center gap-2">
                   <span
-                    className="text-xs font-bold"
+                    className="text-sm font-bold"
                     style={{
-                      color: "#ff6666",
+                      color:
+                        index === 0
+                          ? "#FFD700"
+                          : index === 1
+                          ? "#C0C0C0"
+                          : index === 2
+                          ? "#CD7F32"
+                          : "#888",
                     }}
                   >
-                    {user.xp} XP
+                    #{index + 1}
+                  </span>
+
+                  <span className="text-sm font-medium truncate max-w-30">
+                    {user.full_name}
                   </span>
                 </div>
-              )
-            )}
+
+                <span
+                  className="text-xs font-bold"
+                  style={{
+                    color: "#ff6666",
+                  }}
+                >
+                  {user.xp} XP
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -472,15 +468,11 @@ export default function MobileDashboardPage() {
 
         <div className="space-y-2">
           {subjects.map((subject) => {
-            const subjectNotes =
-              notes.filter(
-                (n) =>
-                  n.subject === subject
-              );
+            const subjectNotes = notes.filter(
+              (n) => n.subject === subject
+            );
 
-            if (
-              subjectNotes.length === 0
-            )
+            if (subjectNotes.length === 0)
               return null;
 
             const isOpen =
@@ -498,12 +490,10 @@ export default function MobileDashboardPage() {
                 <button
                   onClick={() =>
                     setOpenSubject(
-                      isOpen
-                        ? null
-                        : subject
+                      isOpen ? null : subject
                     )
                   }
-                  className="w-full flex items-center justify-between p-3 transition hover:opacity-80"
+                  className="w-full flex items-center justify-between p-3"
                 >
                   <span className="text-sm font-bold">
                     {subject}
@@ -512,86 +502,67 @@ export default function MobileDashboardPage() {
                   <span
                     className="text-xs"
                     style={{
-                      color:
-                        subTextColor,
+                      color: subTextColor,
                     }}
                   >
-                    {
-                      subjectNotes.length
-                    }{" "}
-                    {isOpen
-                      ? "▲"
-                      : "▼"}
+                    {subjectNotes.length}{" "}
+                    {isOpen ? "▲" : "▼"}
                   </span>
                 </button>
 
                 {isOpen && (
                   <div className="px-3 pb-3 space-y-2">
-                    {subjectNotes.map(
-                      (note) => (
-                        <div
-                          key={note.id}
-                          className="p-3 rounded-xl flex items-center justify-between gap-2"
-                          style={{
-                            background:
-                              noteBg,
-                          }}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-xs truncate">
-                              {
-                                note.title
-                              }
-                            </p>
+                    {subjectNotes.map((note) => (
+                      <div
+                        key={note.id}
+                        className="p-3 rounded-xl flex items-center justify-between gap-2"
+                        style={{
+                          background: noteBg,
+                        }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-xs truncate">
+                            {note.title}
+                          </p>
 
-                            <p
-                              className="text-xs mt-0.5"
-                              style={{
-                                color:
-                                  subTextColor,
-                              }}
-                            >
-                              ❤️{" "}
-                              {note.likes ||
-                                0}
-                            </p>
-                          </div>
-
-                          <div className="flex gap-1 shrink-0">
-                            <a
-                              href={
-                                note.file_url
-                              }
-                              target="_blank"
-                              className="px-2 py-1 rounded-lg text-xs"
-                              style={{
-                                background:
-                                  darkMode
-                                    ? "#1e3a5f"
-                                    : "#dbeafe",
-                                color:
-                                  darkMode
-                                    ? "#fff"
-                                    : "#1e3a5f",
-                              }}
-                            >
-                              Open
-                            </a>
-
-                            <button
-                              onClick={() =>
-                                setDeleteTarget(
-                                  note
-                                )
-                              }
-                              className="bg-red-600 px-2 py-1 rounded-lg text-white flex items-center justify-center"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                          <p
+                            className="text-xs mt-0.5"
+                            style={{
+                              color: subTextColor,
+                            }}
+                          >
+                            ❤️ {note.likes || 0}
+                          </p>
                         </div>
-                      )
-                    )}
+
+                        <div className="flex gap-1 shrink-0">
+                          <a
+                            href={note.file_url}
+                            target="_blank"
+                            className="px-2 py-1 rounded-lg text-xs"
+                            style={{
+                              background: darkMode
+                                ? "#1e3a5f"
+                                : "#dbeafe",
+                              color: darkMode
+                                ? "#fff"
+                                : "#1e3a5f",
+                            }}
+                          >
+                            Open
+                          </a>
+
+                          <button
+                            onClick={() =>
+                              setDeleteTarget(note)
+                            }
+                            className="bg-red-600 px-2 py-1 rounded-lg text-white flex items-center justify-center"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -599,110 +570,7 @@ export default function MobileDashboardPage() {
           })}
         </div>
       </div>
-
-      {/* Bottom Nav */}
-      <div
-        className="fixed bottom-4 left-4 right-4 flex items-center justify-around p-3 z-40 rounded-3xl glass"
-        style={{
-          background: darkMode
-            ? "rgba(13,0,0,0.75)"
-            : "rgba(255,245,245,0.7)",
-          border,
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter:
-            "blur(18px)",
-        }}
-      >
-        <a
-          href="/mobile/dashboard"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <LayoutDashboard size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Home
-          </span>
-        </a>
-
-        <a
-          href="/mobile/feed"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <BookOpen size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Notes
-          </span>
-        </a>
-
-        <a
-          href="/mobile/upload"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <PlusSquare size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Upload
-          </span>
-        </a>
-
-        <a
-          href="/mobile/chat"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <MessageCircle size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Chat
-          </span>
-        </a>
-
-        <a
-          href="/mobile/profile"
-          className="flex flex-col items-center gap-1"
-        >
-          <span className="text-xl">
-            <CircleUserRound size={22} />
-          </span>
-
-          <span
-            className="text-xs"
-            style={{
-              color: subTextColor,
-            }}
-          >
-            Profile
-          </span>
-        </a>
-      </div>
+    )}
 
       {/* Delete Modal */}
       {deleteTarget && (
@@ -776,6 +644,11 @@ export default function MobileDashboardPage() {
           </div>
         </div>
       )}
+      <MobileNavbar
+        darkMode={darkMode}
+        subTextColor={subTextColor}
+        border={border}
+      />
     </div>
   );
 }

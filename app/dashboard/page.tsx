@@ -14,6 +14,8 @@ import {
 } from "recharts";
 import { Trophy } from "lucide-react";
 import { FileText } from "lucide-react";
+import { Zap } from "lucide-react";
+import { Heart } from "lucide-react";
 
 type Note = {
   id: string;
@@ -398,17 +400,17 @@ export default function DashboardPage() {
             {
               label: "Notes",
               value: notesCount,
-              icon: "📄",
+              icon: <FileText size={18} />,
             },
             {
               label: "XP",
               value: xp,
-              icon: "⚡",
+              icon: <Zap size={20} />,
             },
             {
               label: "Likes",
               value: totalLikes,
-              icon: "❤️",
+              icon: <Heart size={20} />,
             },
           ].map((stat) => (
             <div

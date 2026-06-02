@@ -88,20 +88,6 @@ export default function MobileAnnouncementsPage() {
     }
   }
 
-  if (loading)
-    return (
-      <div className="loading-screen">
-        <img
-          src="/toggle-icon.png"
-          className="loading-x"
-          alt="loading"
-        />
-        <div className="loading-text">
-          Loading
-        </div>
-      </div>
-    );
-
   return (
     <div
       className="min-h-screen transition-all duration-500"
@@ -110,6 +96,12 @@ export default function MobileAnnouncementsPage() {
         color: textColor,
       }}
     >
+        {loading && (
+          <div className="loading-screen">
+            <img src="/toggle-icon.png" className="loading-x" alt="loading" />
+            <div className="loading-text">Loading Announcements</div>
+          </div>
+        )}
       <div className="p-4 pb-28">
 
         {/* HEADER */}

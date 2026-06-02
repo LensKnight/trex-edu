@@ -2,6 +2,9 @@
 
 import { useTheme } from "../../../../src/context/ThemeContext";
 import { ArrowLeft, Info } from "lucide-react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import useAuth from "../../../../src/hooks/useAuth";
 
 export default function AboutPage() {
   const { darkMode } = useTheme();
@@ -21,6 +24,15 @@ export default function AboutPage() {
     : "1px solid #ffb3b3";
 
   const subText = darkMode ? "#a1a1aa" : "#8b0000";
+
+  const router = useRouter();
+  const { session, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !session) {
+      router.push("/");
+    }
+  }, [loading, session, router]);
 
   return (
     <div

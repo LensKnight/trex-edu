@@ -51,7 +51,7 @@ export default function AnnouncementsPage() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <p className="text-xs md:text-sm font-medium tracking-widest uppercase mb-1" style={{color: subTextColor}}>School Updates</p>
-          <h1 className="text-3xl md:text-5xl font-bold">📢 Announcements</h1>
+          <h1 className="text-3xl md:text-5xl font-bold">Announcements</h1>
           <div className="mt-2 h-0.5 w-16 md:w-24 rounded-full" style={{background: "linear-gradient(90deg, #8b0000, transparent)"}} />
         </div>
       </div>
