@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import useAuth from "../../../src/hooks/useAuth";
+import MobileNavbar from "@/components/MobileNavbar";
+import MobilePageWrapper from "@/components/MobilePageWrapper";
 
 export default function MobileSettingsPage() {
   const router = useRouter();
@@ -103,11 +105,12 @@ export default function MobileSettingsPage() {
   }
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: bg,
-        color: textColor,
+    <MobilePageWrapper>
+      <div
+        className="min-h-screen"
+        style={{
+          background: bg,
+          color: textColor,
       }}
     >
       <div className="p-4 pb-24">
@@ -310,8 +313,15 @@ export default function MobileSettingsPage() {
           <LogOut size={18} />
           Logout
         </button>
-
+      
       </div>
+          <MobileNavbar
+            darkMode={darkMode}
+            subTextColor={subTextColor}
+            border={border}
+          />
     </div>
+   </MobilePageWrapper>
+
   );
 }

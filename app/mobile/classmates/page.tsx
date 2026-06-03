@@ -11,6 +11,7 @@ import {
   CircleUserRound,
 } from "lucide-react";
 import MobileNavbar from "@/components/MobileNavbar";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function MobileClassmatesPage() {
   const { darkMode, setDarkMode } = useTheme();
@@ -96,14 +97,36 @@ export default function MobileClassmatesPage() {
       </div>
 
       {/* Modal */}
+      <AnimatePresence>
       {selectedStudent && (
-        <div
-          className="fixed inset-0 flex items-end justify-center z-50"
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 flex items-center justify-center z-50"
           style={{background: "rgba(0,0,0,0.7)"}}
           onClick={() => setSelectedStudent(null)}
         >
-          <div
-            className="w-full p-6 rounded-t-3xl"
+          <motion.div
+            initial={{
+              opacity: 0,
+              scale: 0.8,
+              y: 50,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.8,
+              y: 50,
+            }}
+            transition={{
+              duration: 0.25,
+            }}
+            className="w-[90%] max-w-sm p-6 rounded-3xl"
             style={{background: darkMode ? "#1a0000" : "#fff5f5", color: textColor, border}}
             onClick={(e) => e.stopPropagation()}
           >
@@ -137,9 +160,11 @@ export default function MobileClassmatesPage() {
             >
               Close
             </button>
-          </div>
-        </div>
+          </motion.div>
+          
+        </motion.div>
       )}
+      </AnimatePresence>
 
       <MobileNavbar
         darkMode={darkMode}

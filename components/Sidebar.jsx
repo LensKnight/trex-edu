@@ -14,6 +14,7 @@ import {
   Bell,
   LogOut,
   Settings,
+  Bot,
 } from "lucide-react";
 
 export default function Sidebar({ collapsed, setCollapsed }) {
@@ -44,6 +45,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
     { href: "/upload", label: "Upload Notes", icon: <Upload size={20} /> },
+    { href: "/ai-teacher", label: "AI Teacher", icon: <Bot size={20} /> },
     { href: "/feed", label: "Notes Feed", icon: <BookOpen size={20} /> },
     { href: "/classmates", label: "Classmates", icon: <Users size={20} /> },
     { href: "/chat", label: "Class Chat", icon: <MessageCircle size={20} /> },

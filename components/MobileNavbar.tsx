@@ -9,6 +9,8 @@ import {
   PlusSquare,
   MessageCircle,
   CircleUserRound,
+  Bot,
+  Settings
 } from "lucide-react";
 
 
@@ -35,6 +37,11 @@ export default function MobileNavbar({
       icon: BookOpen,
     },
     {
+      href: "/mobile/ai-teacher",
+      label: "AI",
+      icon: Bot,
+    },
+    {
       href: "/mobile/upload",
       label: "Upload",
       icon: PlusSquare,
@@ -48,6 +55,11 @@ export default function MobileNavbar({
       href: "/mobile/profile",
       label: "Profile",
       icon: CircleUserRound,
+    },
+    {
+      href: "/mobile/settings",
+      label: "Settings",
+      icon: Settings,
     },
   ];
 
