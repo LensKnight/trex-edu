@@ -5,7 +5,6 @@ import { useTheme } from "../../../src/context/ThemeContext";
 import MobileNavbar from "../../../components/MobileNavbar";
 import MobilePageWrapper from "@/components/MobilePageWrapper";
 import { Bot } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { supabase } from "../../../src/lib/supabase";
 
 export default function AITeacherPage() {
