@@ -3,13 +3,38 @@
 import { useState } from "react";
 import { supabase } from "../src/lib/supabase";
 import { useRouter } from "next/navigation";
-import { redirect } from "next/navigation";
+import { useEffect } from "react";
+
+
 
 
 export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+    useEffect(() => {
+      async function checkUser() {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) return;
+
+        const isMobile =
+          /Android|iPhone|iPad|iPod|Mobi|Opera Mini|IEMobile/i.test(
+            navigator.userAgent
+          );
+
+        router.replace(
+          isMobile
+            ? "/mobile/dashboard"
+            : "/dashboard"
+        );
+      }
+
+      checkUser();
+    }, [router]);
+
 
 
   async function login() {
