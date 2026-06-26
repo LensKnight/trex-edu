@@ -1,17 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "../../src/lib/supabase";
 
 export default function PhotoUploadPage() {
   const [username, setUsername] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState("");
+
+      async function fetchStudent(username: string) {
+      if (username.length < 8) {
+        setFullName("");
+        return;
+      }
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("username", username)
+        .single();
+
+      if (data) {
+        setFullName(data.full_name);
+      } else {
+        setFullName("");
+      }
+    }    
   
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0];
 
+    const selected = e.target.files?.[0];
     if (!selected) return;
 
     setFile(selected);
@@ -31,6 +52,7 @@ export default function PhotoUploadPage() {
     
     form.append("username", username);
     form.append("photo", file);
+    form.append("full_name", fullName);
 
     const res = await fetch(
         "/api/upload-photo",
@@ -50,6 +72,7 @@ export default function PhotoUploadPage() {
         setUsername("");
         setFile(null);
         setPreview("");
+        setFullName("");
     } else {
         alert("Upload Failed");
         console.log(data);
@@ -83,14 +106,24 @@ export default function PhotoUploadPage() {
 
         <input
           type="text"
-          placeholder="Username (Example: MVM6408H)"
+          placeholder="Username (Example: MVM1234H)"
           value={username}
-          onChange={(e) =>
-            setUsername(e.target.value.toUpperCase())
-          }
+          onChange={async (e) => {
+            const value = e.target.value.toUpperCase();
+
+            setUsername(value);
+
+            await fetchStudent(value);
+          }}
           className="w-full mb-4 rounded-xl bg-zinc-900 border border-zinc-700 p-3 text-white outline-none focus:border-red-600"
         />
-
+          {fullName && (
+            <div className="mb-4 rounded-xl border border-green-700 bg-green-900/20 p-3">
+              <p className="text-green-400 text-sm">
+                👤 {fullName}
+              </p>
+            </div>
+          )}
         <input
         id="photoInput"
         type="file"
@@ -138,10 +171,14 @@ export default function PhotoUploadPage() {
 
         <button
           onClick={uploadPhoto}
-          disabled={loading}
-          className="w-full rounded-xl bg-red-700 hover:bg-red-600 transition p-3 font-semibold text-white"
+          disabled={loading || !fullName}
+          className="w-full rounded-xl bg-red-700 hover:bg-red-600 disabled:bg-zinc-700 disabled:cursor-not-allowed transition p-3 font-semibold text-white"
         >
-          {loading ? "Uploading..." : "Upload Photo"}
+          {loading
+            ? "Uploading..."
+            : fullName
+            ? "Upload Photo"
+            : "Enter Valid Username"}
         </button>
 
         <p className="text-center text-zinc-500 text-xs mt-6">
