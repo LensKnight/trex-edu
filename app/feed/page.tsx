@@ -25,7 +25,7 @@ import {
 export default function FeedPage() {
   const { session, loading } = useAuth();
   const { darkMode, setDarkMode } = useTheme();
-
+  const [expandedNote, setExpandedNote] = useState<string | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [liking, setLiking] = useState<string | null>(null);
   const [likedNotes, setLikedNotes] = useState<string[]>([]);
@@ -414,7 +414,7 @@ export default function FeedPage() {
                 return (
                   <div
                     key={note.id}
-                    className="p-4 md:p-5 rounded-3xl transition-all duration-300"
+                    className="p-4 md:p-5 rounded-3xl transition-all duration-300 hover:scale-103"
                     style={{
                       background: cardBg,
                       border,

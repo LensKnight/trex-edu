@@ -18,7 +18,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const hideSidebar = pathname === "/";
+  const hideSidebar =
+    pathname === "/" ||
+    pathname === "/upload-photo";
   const isMobilePage = pathname.startsWith("/mobile");
   const [collapsed, setCollapsed] = useState(false);
 
