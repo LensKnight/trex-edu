@@ -1,5 +1,5 @@
 "use client";
-import { buildTrexViewLink } from "../../src/lib/trexview";
+
 import { Baloo_2 } from "next/font/google";
 
 const baloo = Baloo_2({
@@ -21,6 +21,7 @@ type Note = {
   uploader_id: string;
   uploader_name?: string;
 };
+import { buildTrexViewLink } from "../../src/lib/trexview";
 
 import {
   LayoutDashboard,
@@ -35,6 +36,29 @@ import {
   Award,
   ExternalLink,
 } from "lucide-react";
+
+const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
+
+// Pulls a real extension out of a Telegram file_path, e.g. "documents/file_72.pdf" -> "pdf".
+// Telegram often omits the extension entirely (e.g. "documents/file_72"), so this can return "".
+function extFromFilePath(filePath: string): string {
+  const match = filePath.match(/\.([a-zA-Z0-9]+)$/);
+  return match ? match[1].toLowerCase() : "";
+}
+
+// Decides pdf vs image for the viewer. Priority: real extension from Telegram path,
+// then the note's own file_type from the DB, then the Telegram folder prefix
+// ("photos/" vs "documents/"), then default to pdf since that's the common case for notes.
+function inferViewerType(filePath: string, noteFileType?: string): "pdf" | "image" {
+  const pathExt = extFromFilePath(filePath);
+  const dbExt = (noteFileType || "").toLowerCase().replace(".", "");
+  const ext = pathExt || dbExt;
+
+  if (IMAGE_EXTS.includes(ext)) return "image";
+  if (ext === "pdf") return "pdf";
+  if (filePath.startsWith("photos/")) return "image";
+  return "pdf";
+}
 
 // Returns badge info (label + icon + colors) based on file extension
 function getFileBadge(fileType?: string, darkMode?: boolean) {
@@ -58,7 +82,7 @@ function getFileBadge(fileType?: string, darkMode?: boolean) {
     };
   }
 
-  if (["jpg", "jpeg", "png", "webp"].includes(ext)) {
+  if (IMAGE_EXTS.includes(ext)) {
     return {
       label: "IMG",
       Icon: ImageIcon,
@@ -251,23 +275,28 @@ export default function FeedPage() {
     }
   }
 
-  const openNote = async (fileId?: string, fileTitle?: string) => {
-  if (!fileId) return alert("File not found");
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`);
-    const data = await res.json();
-    if (!data.ok) return alert("Cannot open file");
+  const openNote = async (note: Note) => {
+    if (!note.file_id) return alert("File not found");
+    try {
+      const res = await fetch(
+        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${note.file_id}`
+      );
+      const data = await res.json();
+      if (!data.ok) return alert("Cannot open file");
 
-    const filePath = data.result.file_path;
-    const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
-    const ext = filePath.split(".").pop() || "";
-    const fileName = `${fileTitle || "note"}.${ext}`;
+      const filePath: string = data.result.file_path;
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
 
-    window.open(buildTrexViewLink(fileUrl, fileName), "_blank");
-  } catch {
-    alert("Open failed");
-  }
-};
+      const viewerType = inferViewerType(filePath, note.file_type);
+      const pathExt = extFromFilePath(filePath);
+      const displayExt = pathExt || note.file_type || (viewerType === "image" ? "jpg" : "pdf");
+      const fileName = `${note.title}.${displayExt}`;
+
+      window.open(buildTrexViewLink(fileUrl, fileName, viewerType), "_blank");
+    } catch {
+      alert("Open failed");
+    }
+  };
 
   async function likeNote(note: Note) {
     if (!session) return;
@@ -665,7 +694,7 @@ export default function FeedPage() {
                     >
                       <button
                         onClick={() =>
-                          openNote(note.file_id, note.title)
+                          openNote(note)
                         }
                         className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition text-xs font-semibold hover:brightness-110"
                         style={{
