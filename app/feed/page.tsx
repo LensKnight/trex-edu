@@ -1,4 +1,5 @@
 "use client";
+import { buildTrexViewLink } from "../../src/lib/trexview";
 import { Baloo_2 } from "next/font/google";
 
 const baloo = Baloo_2({
@@ -250,33 +251,23 @@ export default function FeedPage() {
     }
   }
 
-  const openNote = async (fileId?: string) => {
-    if (!fileId) return alert("File not found");
-    try {
-      const res = await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`);
-      const data = await res.json();
-      if (!data.ok) return alert("Cannot open file");
+  const openNote = async (fileId?: string, fileTitle?: string) => {
+  if (!fileId) return alert("File not found");
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${fileId}`);
+    const data = await res.json();
+    if (!data.ok) return alert("Cannot open file");
 
-      const filePath = data.result.file_path;
-      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
-      const lower = filePath.toLowerCase();
+    const filePath = data.result.file_path;
+    const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
+    const ext = filePath.split(".").pop() || "";
+    const fileName = `${fileTitle || "note"}.${ext}`;
 
-      if (lower.endsWith(".pdf")) {
-        window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}`, "_blank");
-      } 
-        else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp")) {
-        // Image — HTML page mein wrap karke dikhao
-        const html = `<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${fileUrl}" style="max-width:100%;max-height:100vh;object-fit:contain"/></body></html>`;
-        const blob = new Blob([html], {type: "text/html"});
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, "_blank");
-      } else {
-        window.open(fileUrl, "_blank");
-      }
-    } catch {
-      alert("Open failed");
-    }
-  };
+    window.open(buildTrexViewLink(fileUrl, fileName), "_blank");
+  } catch {
+    alert("Open failed");
+  }
+};
 
   async function likeNote(note: Note) {
     if (!session) return;
@@ -674,7 +665,7 @@ export default function FeedPage() {
                     >
                       <button
                         onClick={() =>
-                          openNote(note.file_id)
+                          openNote(note.file_id, note.title)
                         }
                         className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition text-xs font-semibold hover:brightness-110"
                         style={{
