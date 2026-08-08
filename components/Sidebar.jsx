@@ -65,70 +65,25 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         overflow: "hidden",
       }}
     >
-      {/* Top — Logo */}
-      <div className="flex items-center justify-between px-4 py-5 shrink-0">
-        {!collapsed && (
-          <img src="/toogle-trex.png" alt="TreX Edu" className="h-22 object-contain -mt-4" />
+      {/* Logo Area */}
+      <div
+        className="flex items-center justify-center shrink-0"
+        style={{
+          height: "90px",
+        }}
+      >
+        {!collapsed ? (
+          <img src="/toogle-trex.png" alt="TreX Edu" className="h-30 object-contain -mt-4" />
+        ) : (
+          <div className="w-8 h-8 rounded-xl bg-red-700 flex items-center justify-center">
+            X
+          </div>
         )}
       </div>
 
-      {/* Profile Card */}
-      {!collapsed && (
-        <div className="px-4 mb-4">
-          {profile ? (
-            <div className="p-4 rounded-2xl relative overflow-hidden" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #3f0000" }}>
-              <img src="/mvmlogo.png" alt="" className="absolute inset-0 w-full h-full object-contain opacity-10 pointer-events-none p-2" />
-              <div className="flex items-center justify-between relative z-10">
-                <a href="/profile" className="flex items-center gap-3 flex-1">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0" style={{ background: "linear-gradient(135deg, #6b0000, #3d0000)" }}>
-                    {profile.full_name?.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-white text-sm font-bold">{profile.full_name}</p>
-                    <p className="text-zinc-400 text-xs">{profile.stream}</p>
-                  </div>
-                </a>
-                <button
-                  onClick={logout}
-                  className="text-zinc-400 hover:text-red-400 ml-2 transition-all duration-200"
-                  title="Logout"
-                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.2)"}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                  style={{transition: "transform 0.2s ease"}}
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
-              <div className="mt-3 flex gap-2 relative z-10">
-                <span className="text-xs px-2 py-1 rounded-lg text-red-300" style={{ background: "rgba(100,0,0,0.4)" }}>
-                  {profile.class_name}
-                </span>
-                <span className="text-xs px-2 py-1 rounded-lg text-red-300" style={{ background: "rgba(100,0,0,0.4)" }}>
-                  Sec {profile.section}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <p className="text-zinc-500 text-sm">Profile not set</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Collapsed profile avatar */}
-      {collapsed && profile && (
-        <div className="flex justify-center mb-4">
-          <a href="/profile">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ background: "linear-gradient(135deg, #6b0000, #3d0000)" }}>
-              {profile.full_name?.charAt(0)}
-            </div>
-          </a>
-        </div>
-      )}
-
-      {/* Nav Links */}
-      <div className="flex-1 px-2 space-y-1">
+      {/* Nav Links — right after logo. flex-1 makes this fill remaining space,
+          pushing the profile card below it down to the bottom */}
+      <div className="flex-1 px-2 space-y-1 overflow-y-auto">
       {navItems.map((item) => {
         const active = pathname === item.href;
 
@@ -183,17 +138,58 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       })}
       </div>
 
-      {/* Collapsed logout */}
-      {collapsed && (
-        <div className="p-3 mb-2">
-          <button
-            onClick={logout}
-            className="w-full p-3 rounded-2xl flex items-center justify-center text-zinc-400 hover:text-red-400 transition-all duration-300 hover:scale-105"
-            style={{ background: "rgba(100,0,0,0.2)" }}
-            title="Logout"
-          >
-            <LogOut size={18} />
-          </button>
+      {/* Profile Card — now at the bottom, after Nav Links */}
+      {!collapsed && (
+        <div className="px-4 mb-4">
+          {profile ? (
+            <div className="p-4 rounded-2xl relative overflow-hidden" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #3f0000" }}>
+              <img src="/mvmlogo.png" alt="" className="absolute inset-0 w-full h-full object-contain opacity-10 pointer-events-none p-2" />
+              <div className="flex items-center justify-between relative z-10">
+                <a href="/profile" className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0" style={{ background: "linear-gradient(135deg, #6b0000, #3d0000)" }}>
+                    {profile.full_name?.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-bold">{profile.full_name}</p>
+                    <p className="text-zinc-400 text-xs">{profile.stream}</p>
+                  </div>
+                </a>
+                <button
+                  onClick={logout}
+                  className="text-zinc-400 hover:text-red-400 ml-2 transition-all duration-200"
+                  title="Logout"
+                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.2)"}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                  style={{transition: "transform 0.2s ease"}}
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+              <div className="mt-3 flex gap-2 relative z-10">
+                <span className="text-xs px-2 py-1 rounded-lg text-red-300" style={{ background: "rgba(100,0,0,0.4)" }}>
+                  {profile.class_name}
+                </span>
+                <span className="text-xs px-2 py-1 rounded-lg text-red-300" style={{ background: "rgba(100,0,0,0.4)" }}>
+                  Sec {profile.section}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <p className="text-zinc-500 text-sm">Profile not set</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Collapsed profile avatar — now at the bottom */}
+      {collapsed && profile && (
+        <div className="flex justify-center mb-4">
+          <a href="/profile">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ background: "linear-gradient(135deg, #6b0000, #3d0000)" }}>
+              {profile.full_name?.charAt(0)}
+            </div>
+          </a>
         </div>
       )}
     </div>
