@@ -26,6 +26,7 @@ type Note = {
   id: string;
   title: string;
   subject: string;
+  category?: string;
   file_id?: string;
   file_type?: string; // e.g. "pdf", "jpg", "png" — populated from DB if column exists
   likes: number;
@@ -34,6 +35,8 @@ type Note = {
 };
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
+
+const CATEGORIES = ["All", "School Notes", "Extra Notes", "TreX Special"];
 
 // Pulls a real extension out of a Telegram file_path, e.g. "documents/file_72.pdf" -> "pdf".
 // Telegram often omits the extension entirely (e.g. "documents/file_72"), so this can return "".
@@ -123,6 +126,7 @@ export default function MobileFeedPage() {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerUrl, setViewerUrl] = useState("");
   const [viewerType, setViewerType] = useState<"image" | "pdf" | "other">("other");
+  const [activeCategory, setActiveCategory] = useState<string>("All");
 
   // Report confirmation modal state
   const [reportTarget, setReportTarget] = useState<Note | null>(null);
@@ -169,6 +173,7 @@ export default function MobileFeedPage() {
         data.map((n: any) => ({
           ...n,
           uploader_name: n.profiles?.full_name || "Unknown",
+          category: n.category || "School Notes",
           // falls back gracefully to undefined if the notes table
           // doesn't have a file_type / file_name column yet
           file_type:
@@ -318,8 +323,9 @@ export default function MobileFeedPage() {
   }
 
   const filteredBySearch = notes.filter((note) =>
-    note.title.toLowerCase().includes(search.toLowerCase()) ||
-    note.subject.toLowerCase().includes(search.toLowerCase())
+    (activeCategory === "All" || note.category === activeCategory) &&
+    (note.title.toLowerCase().includes(search.toLowerCase()) ||
+      note.subject.toLowerCase().includes(search.toLowerCase()))
   );
 
   const subjects = ["Physics","Chemistry","Mathematics","Computer Science","English","Physical Education"];
@@ -348,7 +354,7 @@ export default function MobileFeedPage() {
       </div>
 
       {/* Search */}
-      <div className="px-4 mb-5">
+      <div className="px-4 mb-3">
         <input
           type="text"
           placeholder="🔍 Search notes..."
@@ -357,6 +363,27 @@ export default function MobileFeedPage() {
           className="w-full p-3 rounded-2xl outline-none"
           style={{background: inputBg, color: textColor, border}}
         />
+      </div>
+
+      {/* Category tabs */}
+      <div
+        className="flex gap-2 overflow-x-auto px-4 mb-5 pb-1 [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className="shrink-0 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors"
+            style={{
+              background: activeCategory === cat ? "#8b0000" : inputBg,
+              color: activeCategory === cat ? "#ffffff" : textColor,
+              border,
+            }}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
 
       {/* Notes — horizontal scroll rows per subject */}

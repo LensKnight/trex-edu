@@ -20,6 +20,7 @@ export default function MobileUploadPage() {
   const [progress, setProgress] = useState(0);
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState("School Notes");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const router = useRouter();
@@ -29,8 +30,10 @@ export default function MobileUploadPage() {
     : "linear-gradient(135deg, #fff5f5 0%, #ffe4e4 40%, #ffffff 100%)";
   const textColor = darkMode ? "#ffffff" : "#1a0000";
   const subTextColor = darkMode ? "#a1a1aa" : "#8b0000";
-  const cardBg = darkMode ? "#18181b" : "#ffcccc";
-  const inputBg = darkMode ? "#3f3f46" : "#ffd0d0";
+  const cardBg = darkMode
+    ? "linear-gradient(160deg, #1c1c1f 0%, #150505 100%)"
+    : "linear-gradient(160deg, #ffffff 0%, #ffe0e0 100%)";
+  const inputBg = darkMode ? "#1b1b1e" : "#ffd0d0";
   const border = darkMode ? "1px solid #3f0000" : "1px solid #ffb3b3";
 
   async function uploadNote() {
@@ -59,7 +62,7 @@ export default function MobileUploadPage() {
       const form = new FormData();
       form.append("chat_id", "-1003724740509");
       form.append("document", file);
-      form.append("caption", `📚 New Note Uploaded!\n\n📌 Title: ${title}\n📘 Subject: ${subject}`);
+      form.append("caption", `📚 New Note Uploaded!\n\n📌 Title: ${title}\n📘 Subject: ${subject}\n🏷️ Category: ${category}`);
 
       const tgRes = await fetch(`https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/sendDocument`, { method: "POST", body: form });
       const tgData = await tgRes.json();
@@ -68,7 +71,7 @@ export default function MobileUploadPage() {
       const file_id = tgData?.result?.document?.file_id || null;
 
       const { error: dbError } = await supabase.from("notes").insert([{
-        title, subject,
+        title, subject, category,
         uploader_id: user.id,
         class_name: profile?.class_name,
         section: profile?.section,
@@ -123,17 +126,32 @@ export default function MobileUploadPage() {
 
       {/* Form */}
       <div className="px-4 mt-4">
-        <div className="p-5 rounded-3xl" style={{background: cardBg, border}}>
+        <div
+          className="p-5 rounded-3xl"
+          style={{
+            background: cardBg,
+            border,
+            boxShadow: darkMode
+              ? "0 1px 2px rgba(0,0,0,0.3), 0 16px 32px -16px rgba(0,0,0,0.6)"
+              : "0 1px 2px rgba(139,0,0,0.05), 0 16px 32px -16px rgba(139,0,0,0.25)",
+          }}
+        >
 
+          <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
+            Title
+          </label>
           <input
             type="text"
-            placeholder="Title"
+            placeholder="e.g. Chapter 4 — Thermodynamics"
             disabled={uploading}
             className="w-full p-3 mb-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed outline-none"
             style={{background: inputBg, color: textColor, border}}
             onChange={(e) => setTitle(e.target.value)}
           />
 
+          <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
+            Subject
+          </label>
           <select
             disabled={uploading}
             className="w-full p-3 mb-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed outline-none"
@@ -149,6 +167,23 @@ export default function MobileUploadPage() {
             <option value="Physical Education">Physical Education</option>
           </select>
 
+          <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
+            Category
+          </label>
+          <select
+            disabled={uploading}
+            value={category}
+            className="w-full p-3 mb-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed outline-none"
+            style={{background: inputBg, color: textColor, border}}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="School Notes">School Notes</option>
+            <option value="Extra Notes">Extra Notes</option>
+          </select>
+
+          <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
+            File
+          </label>
           <label className="block mb-4">
             <div className={`p-4 rounded-xl text-center transition-all duration-300 ${uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               style={{background: inputBg, border, color: subTextColor}}>
@@ -165,7 +200,7 @@ export default function MobileUploadPage() {
           <button
             onClick={uploadNote}
             disabled={uploading}
-            className="w-full p-3 rounded-2xl text-white font-bold transition-all duration-300"
+            className="w-full p-3 rounded-2xl text-white font-bold transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
             style={{background: "linear-gradient(135deg, #8b0000, #3d0000)"}}
           >
             {uploading ? "Uploading..." : "Upload"}

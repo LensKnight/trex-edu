@@ -12,6 +12,7 @@ export default function UploadPage() {
   const { darkMode, setDarkMode } = useTheme();
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState("School Notes");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const router = useRouter();
@@ -21,8 +22,10 @@ export default function UploadPage() {
     : "linear-gradient(135deg, #fff5f5 0%, #ffe4e4 40%, #ffffff 100%)";
   const textColor = darkMode ? "#ffffff" : "#1a0000";
   const subTextColor = darkMode ? "#a1a1aa" : "#8b0000";
-  const cardBg = darkMode ? "#18181b" : "#ffcccc";
-  const inputBg = darkMode ? "#3f3f46" : "#ffd0d0";
+  const cardBg = darkMode
+    ? "linear-gradient(160deg, #1c1c1f 0%, #150505 100%)"
+    : "linear-gradient(160deg, #ffffff 0%, #ffe0e0 100%)";
+  const inputBg = darkMode ? "#1b1b1e" : "#ffd0d0";
   const border = darkMode ? "1px solid #3f0000" : "1px solid #ffb3b3";
 
   async function uploadNote() {
@@ -55,7 +58,7 @@ export default function UploadPage() {
       const form = new FormData();
       form.append("chat_id", "-1003724740509");
       form.append("document", file);
-      form.append("caption", `📚 New Note Uploaded!\n\n📌 Title: ${title}\n📘 Subject: ${subject}`);
+      form.append("caption", `📚 New Note Uploaded!\n\n📌 Title: ${title}\n📘 Subject: ${subject}\n🏷️ Category: ${category}`);
 
       const tgRes = await fetch(
         `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/sendDocument`,
@@ -70,6 +73,7 @@ export default function UploadPage() {
       const { error: dbError } = await supabase.from("notes").insert([{
         title,
         subject,
+        category,
         uploader_id: user.id,
         class_name: profile?.class_name,
         section: profile?.section,
@@ -110,7 +114,7 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen relative transition-all duration-500" style={{background: bg, color: textColor}}>
 
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
         {uploading && (
           <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50">
             <img src="/toggle-icon.png" className="loading-x" alt="loading" />
@@ -126,25 +130,40 @@ export default function UploadPage() {
           </div>
         )}
 
-        <div className="p-8 rounded-3xl w-96 transition-all duration-500" style={{background: cardBg, border}}>
-          <div className="mb-6">
-            <p className="text-sm font-medium tracking-widest uppercase mb-1" style={{color: subTextColor}}>Share Your Note</p>
+        <div
+          className="p-8 rounded-3xl w-full max-w-md transition-all duration-500"
+          style={{
+            background: cardBg,
+            border,
+            boxShadow: darkMode
+              ? "0 1px 2px rgba(0,0,0,0.3), 0 20px 40px -20px rgba(0,0,0,0.6)"
+              : "0 1px 2px rgba(139,0,0,0.05), 0 20px 40px -20px rgba(139,0,0,0.25)",
+          }}
+        >
+          <div className="mb-7">
+            <p className="text-xs font-semibold tracking-widest uppercase mb-1" style={{color: subTextColor}}>Share Your Note</p>
             <h1 className="text-3xl font-bold">Upload Notes</h1>
             <div className="mt-2 h-0.5 w-16 rounded-full" style={{background: "linear-gradient(90deg, #8b0000, transparent)"}}></div>
           </div>
 
+          <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
+            Title
+          </label>
           <input
             type="text"
-            placeholder="Title"
+            placeholder="e.g. Chapter 4 — Thermodynamics"
             disabled={uploading}
-            className="w-full p-3 mb-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed outline-none"
+            className="w-full p-3 mb-5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed outline-none transition-colors focus:border-transparent"
             style={{background: inputBg, color: textColor, border}}
             onChange={(e) => setTitle(e.target.value)}
           />
 
+          <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
+            Subject
+          </label>
           <select
             disabled={uploading}
-            className="w-full p-3 mb-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed outline-none"
+            className="w-full p-3 mb-5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed outline-none"
             style={{background: inputBg, color: textColor, border}}
             onChange={(e) => setSubject(e.target.value)}
           >
@@ -157,8 +176,25 @@ export default function UploadPage() {
             <option value="Physical Education">Physical Education</option>
           </select>
 
-          <label className="block mb-4">
-            <div className={`p-4 rounded-xl transition-all duration-300 transform text-center ${uploading ? "opacity-50 cursor-not-allowed" : "hover:scale-105 cursor-pointer"}`}
+          <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
+            Category
+          </label>
+          <select
+            disabled={uploading}
+            value={category}
+            className="w-full p-3 mb-5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed outline-none"
+            style={{background: inputBg, color: textColor, border}}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="School Notes">School Notes</option>
+            <option value="Extra Notes">Extra Notes</option>
+          </select>
+
+          <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
+            File
+          </label>
+          <label className="block mb-2">
+            <div className={`p-4 rounded-xl transition-all duration-300 text-center ${uploading ? "opacity-50 cursor-not-allowed" : "hover:brightness-110 cursor-pointer"}`}
               style={{background: inputBg, border, color: subTextColor}}>
               Choose File
               <p className="text-xs mt-1">(PDF and images, max 20MB)</p>
@@ -173,7 +209,7 @@ export default function UploadPage() {
           <button
             onClick={uploadNote}
             disabled={uploading}
-            className="w-full p-3 rounded-2xl text-white font-bold transition-all duration-300 hover:scale-105"
+            className="w-full p-3 mt-2 rounded-2xl text-white font-bold transition-all duration-300 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
             style={{background: "linear-gradient(135deg, #8b0000, #3d0000)"}}
           >
             {uploading ? "Uploading..." : "Upload"}

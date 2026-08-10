@@ -15,6 +15,7 @@ type Note = {
   id: string;
   title: string;
   subject: string;
+  category?: string;
   file_id?: string;
   file_type?: string; // e.g. "pdf", "jpg", "png" — populated from DB if column exists
   likes: number;
@@ -38,6 +39,8 @@ import {
 } from "lucide-react";
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
+
+const CATEGORIES = ["All", "School Notes", "Extra Notes", "TreX Special"];
 
 // Pulls a real extension out of a Telegram file_path, e.g. "documents/file_72.pdf" -> "pdf".
 // Telegram often omits the extension entirely (e.g. "documents/file_72"), so this can return "".
@@ -131,6 +134,7 @@ export default function FeedPage() {
   const [reportedNotes, setReportedNotes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>("All");
 
   // Report confirmation modal state
   const [reportTarget, setReportTarget] = useState<Note | null>(null);
@@ -241,6 +245,7 @@ export default function FeedPage() {
         data.map((n: any) => ({
           ...n,
           uploader_name: n.profiles?.full_name || "Unknown",
+          category: n.category || "School Notes",
           // falls back gracefully to undefined if the notes table
           // doesn't have a file_type / file_name column yet
           file_type:
@@ -466,12 +471,13 @@ export default function FeedPage() {
 
   const filteredBySearch = notes.filter(
     (note) =>
-      note.title
+      (activeCategory === "All" || note.category === activeCategory) &&
+      (note.title
         .toLowerCase()
         .includes(search.toLowerCase()) ||
-      note.subject
-        .toLowerCase()
-        .includes(search.toLowerCase())
+        note.subject
+          .toLowerCase()
+          .includes(search.toLowerCase()))
   );
 
   const subjects = [
@@ -530,7 +536,7 @@ export default function FeedPage() {
       </div>
 
       {/* Search */}
-      <div className="mb-6 md:mb-10 hover: scale-102 transition-all duration-300">
+      <div className="mb-4 hover: scale-102 transition-all duration-300">
         <input
           type="text"
           placeholder="🔍 Search notes..."
@@ -545,9 +551,24 @@ export default function FeedPage() {
             border,
           }}
         />
-        {/* FILE VIEWER */}
-        
+      </div>
 
+      {/* Category tabs */}
+      <div className="mb-6 md:mb-10 flex gap-2 overflow-x-auto pb-1">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className="shrink-0 rounded-xl px-4 py-2 text-xs md:text-sm font-semibold transition-colors"
+            style={{
+              background: activeCategory === cat ? "#8b0000" : inputBg,
+              color: activeCategory === cat ? "#ffffff" : textColor,
+              border,
+            }}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
 
       {/* Notes */}
