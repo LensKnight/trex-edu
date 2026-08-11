@@ -12,7 +12,7 @@ export default function UploadPage() {
   const { darkMode, setDarkMode } = useTheme();
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
-  const [category, setCategory] = useState("School Notes");
+  const [category, setCategory] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const router = useRouter();
@@ -32,6 +32,7 @@ export default function UploadPage() {
     if (!file) return alert("Select file");
     if (!title) return alert("Enter Title!");
     if (!subject) return alert("Enter Subject!");
+    if (!category) return alert("Enter Category!");
 
     setProgress(0);
     setUploading(true);
@@ -42,7 +43,7 @@ export default function UploadPage() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Login karo pehle!");
+      if (!user) throw new Error("Login first!");
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -50,9 +51,9 @@ export default function UploadPage() {
         .eq("id", user.id)
         .single();
 
-      const MAX_SIZE = 20 * 1024 * 1024;
+      const MAX_SIZE = 30 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        throw new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). select file smaller than 20MB.`);
+        throw new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). select file smaller than 30MB.`);
       }
 
       const form = new FormData();
@@ -186,8 +187,10 @@ export default function UploadPage() {
             style={{background: inputBg, color: textColor, border}}
             onChange={(e) => setCategory(e.target.value)}
           >
+            <option value="">Select Category</option>
             <option value="School Notes">School Notes</option>
             <option value="Extra Notes">Extra Notes</option>
+            <option value="Projects">Projects</option>
           </select>
 
           <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
@@ -197,7 +200,7 @@ export default function UploadPage() {
             <div className={`p-4 rounded-xl transition-all duration-300 text-center ${uploading ? "opacity-50 cursor-not-allowed" : "hover:brightness-110 cursor-pointer"}`}
               style={{background: inputBg, border, color: subTextColor}}>
               Choose File
-              <p className="text-xs mt-1">(PDF and images, max 20MB)</p>
+              <p className="text-xs mt-1">(PDF and images, max 30MB)</p>
             </div>
             <input type="file" className="hidden" disabled={uploading} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </label>

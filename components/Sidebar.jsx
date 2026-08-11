@@ -73,11 +73,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         }}
       >
         {!collapsed ? (
-          <img src="/toogle-trex.png" alt="TreX Edu" className="h-30 object-contain -mt-4" />
+          <img src="/toogle-trex.png" alt="TreX Edu" className="h-30 object-contain -mt-0" />
         ) : (
-          <div className="w-8 h-8 rounded-xl bg-red-700 flex items-center justify-center">
-            X
-          </div>
+          <img src="/toggle-icon.png" alt="TreX Edu" className="h-30 object-contain -mt-0" />
+          
         )}
       </div>
 

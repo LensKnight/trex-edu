@@ -36,7 +36,7 @@ type Note = {
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
 
-const CATEGORIES = ["All", "School Notes", "Extra Notes", "TreX Special"];
+const CATEGORIES = ["All", "School Notes", "Extra Notes", "TreX Special", "Projects"];
 
 // Pulls a real extension out of a Telegram file_path, e.g. "documents/file_72.pdf" -> "pdf".
 // Telegram often omits the extension entirely (e.g. "documents/file_72"), so this can return "".

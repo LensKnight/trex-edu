@@ -20,7 +20,7 @@ export default function MobileUploadPage() {
   const [progress, setProgress] = useState(0);
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
-  const [category, setCategory] = useState("School Notes");
+  const [category, setCategory] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const router = useRouter();
@@ -47,6 +47,7 @@ export default function MobileUploadPage() {
     if (!file) { clearInterval(interval); setUploading(false); return alert("Select file"); }
     if (!title) { clearInterval(interval); setUploading(false); return alert("Enter Title!"); }
     if (!subject) { clearInterval(interval); setUploading(false); return alert("Enter Subject!"); }
+    if (!category) { clearInterval(interval); setUploading(false); return alert("Enter Category!"); }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -177,8 +178,10 @@ export default function MobileUploadPage() {
             style={{background: inputBg, color: textColor, border}}
             onChange={(e) => setCategory(e.target.value)}
           >
+            <option value="">Select Category</option>
             <option value="School Notes">School Notes</option>
             <option value="Extra Notes">Extra Notes</option>
+            <option value="Projects">Projects</option>
           </select>
 
           <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{color: subTextColor}}>
