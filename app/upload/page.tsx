@@ -53,7 +53,7 @@ export default function UploadPage() {
 
       const MAX_SIZE = 30 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        throw new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). select file smaller than 30MB.`);
+        throw new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). select file smaller than 20MB.`);
       }
 
       const form = new FormData();
@@ -200,7 +200,7 @@ export default function UploadPage() {
             <div className={`p-4 rounded-xl transition-all duration-300 text-center ${uploading ? "opacity-50 cursor-not-allowed" : "hover:brightness-110 cursor-pointer"}`}
               style={{background: inputBg, border, color: subTextColor}}>
               Choose File
-              <p className="text-xs mt-1">(PDF and images, max 30MB)</p>
+              <p className="text-xs mt-1">(PDF and images, max 20MB)</p>
             </div>
             <input type="file" className="hidden" disabled={uploading} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </label>

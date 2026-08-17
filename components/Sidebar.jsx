@@ -73,9 +73,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         }}
       >
         {!collapsed ? (
-          <img src="/toogle-trex.png" alt="TreX Edu" className="h-30 object-contain -mt-0" />
+          <img src="/toogle-trex.png" alt="TreX Edu" className="h-30 object-contain mt-0" />
         ) : (
-          <img src="/toggle-icon.png" alt="TreX Edu" className="h-30 object-contain -mt-0" />
+          <img src="/toggle-icon.png" alt="TreX Edu" className="h-30 object-contain mt-0" />
           
         )}
       </div>
