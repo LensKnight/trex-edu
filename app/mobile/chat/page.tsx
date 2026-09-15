@@ -3,14 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../src/lib/supabase";
 import { useTheme } from "../../../src/context/ThemeContext";
-import {
-  LayoutDashboard,
-  BookOpen,
-  PlusSquare,
-  MessageCircle,
-  CircleUserRound,
-} from "lucide-react";
+import { Send, Sparkles, MessageSquare, Loader2, Users } from "lucide-react";
 import MobileNavbar from "@/components/MobileNavbar";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Message = {
   id: string;
@@ -24,7 +19,7 @@ type Message = {
 };
 
 export default function MobileChatPage() {
-  const { darkMode, setDarkMode } = useTheme();
+  const { darkMode } = useTheme();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -54,27 +49,27 @@ export default function MobileChatPage() {
   }, []);
 
   const bg = darkMode
-    ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"
-    : "linear-gradient(135deg, #fff5f5 0%, #ffe4e4 40%, #ffffff 100%)";
+    ? "radial-gradient(ellipse at top, #180505 0%, #09090b 100%)"
+    : "radial-gradient(ellipse at top, #fff5f5 0%, #f8fafc 100%)";
 
-  const textColor = darkMode ? "#ffffff" : "#1a0000";
-  const subTextColor = darkMode ? "#a1a1aa" : "#8b0000";
+  const textColor = darkMode ? "#f4f4f5" : "#0f172a";
+  const subTextColor = darkMode ? "#a1a1aa" : "#64748b";
 
   const inputBg = darkMode
-    ? "rgba(0,0,0,0.3)"
-    : "rgba(255,255,255,0.6)";
+    ? "rgba(39, 39, 42, 0.75)"
+    : "rgba(241, 245, 249, 0.85)";
 
   const myMsgBg = darkMode
-    ? "linear-gradient(135deg, #6b0000, #3d0000)"
-    : "linear-gradient(135deg, #ff9999, #ff6666)";
+    ? "linear-gradient(135deg, #dc2626, #991b1b)"
+    : "linear-gradient(135deg, #ef4444, #dc2626)";
 
   const otherMsgBg = darkMode
-    ? "rgba(255,255,255,0.06)"
-    : "rgba(0,0,0,0.08)";
+    ? "rgba(39, 39, 42, 0.8)"
+    : "rgba(255, 255, 255, 0.9)";
 
   const border = darkMode
-    ? "1px solid #3f0000"
-    : "1px solid #ffb3b3";
+    ? "rgba(255, 255, 255, 0.08)"
+    : "rgba(0, 0, 0, 0.08)";
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -154,7 +149,6 @@ export default function MobileChatPage() {
 
     await fetchMessages(profileData.class_name, profileData.section);
 
-    // Typing channel setup
     const tChannel = supabase.channel(
       `typing-${profileData.class_name}-${profileData.section}`
     );
@@ -169,12 +163,10 @@ export default function MobileChatPage() {
           prev.includes(name) ? prev : [...prev, name]
         );
 
-        // Pehle wala timeout clear karo
         if (typingTimeoutsRef.current[name]) {
           clearTimeout(typingTimeoutsRef.current[name]);
         }
 
-        // 2.5 second baad remove karo
         typingTimeoutsRef.current[name] = setTimeout(() => {
           setTypingUsers((prev) => prev.filter((n) => n !== name));
         }, 2500);
@@ -224,14 +216,12 @@ export default function MobileChatPage() {
   async function sendMessage() {
     if (!text.trim() || !profile || !userId) return;
 
-    const { error } = await supabase
-      .from("messages")
-      .insert({
-        user_id: userId,
-        message: text,
-        class_name: profile.class_name,
-        section: profile.section,
-      });
+    const { error } = await supabase.from("messages").insert({
+      user_id: userId,
+      message: text,
+      class_name: profile.class_name,
+      section: profile.section,
+    });
 
     if (error) {
       alert(error.message);
@@ -243,129 +233,175 @@ export default function MobileChatPage() {
 
   return (
     <div
-      className="flex flex-col h-dvh" style={{ background: bg, color: textColor,}}>
-        {loading && (
-          <div className="loading-screen">
-            <img src="/toggle-icon.png" className="loading-x" alt="loading" />
-            <div className="loading-text">Loading Chats</div>
-          </div>
-        )}
+      className="flex flex-col h-dvh max-w-lg mx-auto relative overflow-hidden"
+      style={{ background: bg, color: textColor }}
+    >
+      {/* Loading Screen */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-md bg-black/60">
+          <Loader2 className="w-8 h-8 text-red-500 animate-spin mb-2" />
+          <p className="text-xs font-semibold tracking-wide text-zinc-300">
+            Connecting to Class Channel...
+          </p>
+        </div>
+      )}
 
-      {/* HEADER */}
-      <div className="shrink-0 px-4 pt-5 pb-3">
-        <div className="flex items-start justify-between">
+      {/* Modern Messenger Header */}
+      <div
+        className="shrink-0 px-4 pt-5 pb-3 backdrop-blur-xl z-20 border-b flex items-center justify-between"
+        style={{
+          background: darkMode ? "rgba(18, 18, 20, 0.8)" : "rgba(255, 255, 255, 0.8)",
+          borderColor: border,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+            <Users size={20} />
+          </div>
           <div>
-            <p className="text-[10px] font-medium tracking-[0.25em] uppercase mb-1"
-              style={{ color: subTextColor }}>
-              Real-time
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-base font-bold tracking-tight">
+                {profile ? `Class ${profile.class_name}-${profile.section}` : "Class Chat"}
+              </h1>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+            <p className="text-[10px] font-medium" style={{ color: subTextColor }}>
+              Real-time Peer Discussion
             </p>
-
-            <h1 className="text-2xl font-bold">Class Chat </h1>
-
-            <div className="h-0.5 w-12 rounded-full mt-2"
-              style={{
-                background: "linear-gradient(90deg, #8b0000, transparent)",
-              }}
-            />
           </div>
+        </div>
+
+        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-red-500/10 text-red-500 border border-red-500/20">
+          <Sparkles size={10} /> Live
         </div>
       </div>
 
-      {/* MESSAGES */}
+      {/* Messages Feed */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-3 pt-1 space-y-3 pb-35"
+        className="flex-1 overflow-y-auto px-4 pt-4 space-y-3 pb-36"
       >
         {messages.map((msg) => {
           const isMe = msg.user_id === userId;
+          const senderName =
+            msg.profiles?.[0]?.full_name ||
+            profileCache[msg.user_id]?.full_name ||
+            "Student";
+
+          const formattedTime = new Date(msg.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
           return (
-            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+            >
               <div
-                className="max-w-[82%] px-3 py-2 shadow-md"
+                className="max-w-[80%] px-3.5 py-2.5 shadow-sm border relative group"
                 style={{
                   background: isMe ? myMsgBg : otherMsgBg,
-                  color: isMe ? "#fff" : textColor,
-                  border,
+                  color: isMe ? "#ffffff" : textColor,
+                  borderColor: isMe ? "transparent" : border,
                   borderRadius: isMe
-                    ? "18px 18px 4px 18px"
-                    : "18px 18px 18px 4px",
+                    ? "20px 20px 4px 20px"
+                    : "20px 20px 20px 4px",
                 }}
               >
                 {!isMe && (
-                  <p className="text-[10px] mb-1 opacity-80"
-                    style={{ color: subTextColor }}>
-                    {msg.profiles?.[0]?.full_name ||
-                      profileCache[msg.user_id]?.full_name ||
-                      "Student"}
+                  <p
+                    className="text-[10px] font-bold mb-0.5 text-red-400"
+                  >
+                    {senderName}
                   </p>
                 )}
 
-                <p className="text-sm wrap-break-words">{msg.message}</p>
+                <p className="text-xs leading-relaxed break-words font-medium">
+                  {msg.message}
+                </p>
+
+                <div
+                  className={`text-[9px] mt-1 text-right font-medium opacity-70 ${
+                    isMe ? "text-zinc-100" : ""
+                  }`}
+                  style={{ color: isMe ? "#ffffff" : subTextColor }}
+                >
+                  {formattedTime}
+                </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
 
         <div ref={bottomRef} />
       </div>
 
-      {/* TYPING INDICATOR */}
-      {typingUsers.length > 0 && (
-        <div className="fixed left-0 right-0 px-5 z-40 bottom-42">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl text-xs"
-            style={{ background: otherMsgBg, color: subTextColor }}
+      {/* Dynamic Typing Indicator Overlay */}
+      <AnimatePresence>
+        {typingUsers.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed left-0 right-0 max-w-lg mx-auto px-4 z-30 bottom-36"
           >
-            <span>
-              {typingUsers.length === 1
-                ? `${typingUsers[0]} typing`
-                : `${typingUsers.join(", ")} typing`}
-            </span>
-            <span className="flex gap-0.5 items-center">
-              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "0ms" }} />
-              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "150ms" }} />
-              <span className="w-1 h-1 rounded-full animate-bounce" style={{ background: subTextColor, animationDelay: "300ms" }} />
-            </span>
-          </div>
-        </div>
-      )}
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold border backdrop-blur-md shadow-lg"
+              style={{
+                background: darkMode ? "rgba(24, 24, 27, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                borderColor: border,
+                color: subTextColor,
+              }}
+            >
+              <span className="text-red-500 font-bold">
+                {typingUsers.length === 1
+                  ? `${typingUsers[0]} is typing`
+                  : `${typingUsers.join(", ")} are typing`}
+              </span>
+              <span className="flex gap-1 items-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* INPUT */}
-      <div className="fixed left-0 right-0 px-3 z-40 bottom-24">
+      {/* Floating Messenger Input Bar */}
+      <div className="fixed left-0 right-0 max-w-lg mx-auto px-3 z-30 bottom-20">
         <div
-          className="flex items-end gap-2 p-2 rounded-[28px] backdrop-blur-xl"
+          className="flex items-center gap-2 p-2 rounded-3xl backdrop-blur-2xl shadow-xl border"
           style={{
             background: darkMode
-              ? "rgba(15,0,0,0.72)"
-              : "rgba(255,245,245,0.72)",
-            border,
+              ? "rgba(18, 18, 20, 0.85)"
+              : "rgba(255, 255, 255, 0.85)",
+            borderColor: border,
           }}
         >
           <input
             value={text}
             onChange={handleTyping}
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="Type message..."
-            className="flex-1 px-4 py-3 rounded-2xl outline-none text-sm"
+            placeholder="Write a message..."
+            className="flex-1 px-4 py-2.5 rounded-2xl outline-none text-xs font-medium placeholder:text-zinc-500 border-none bg-transparent"
             style={{
-              background: inputBg,
               color: textColor,
-              border,
-              bottom: "calc(64px + env(safe-area-inset-bottom) + var(--keyboard-offset, 0px) + 10px)",
-              transition: "bottom 0.25s ease, transform 0.25s ease",
-              transform: "translateY(calc(-1 * var(--keyboard-offset, 0px) * 0.15))"
             }}
           />
 
           <button
             onClick={sendMessage}
-            className="px-4 py-3 rounded-2xl text-white font-bold text-sm"
+            disabled={!text.trim()}
+            className="w-10 h-10 rounded-2xl text-white font-bold transition-all active:scale-95 flex items-center justify-center shrink-0 disabled:opacity-40 disabled:scale-100 shadow-md"
             style={{
-              background: "linear-gradient(135deg, #b30000, #3d0000)",
+              background: "linear-gradient(135deg, #dc2626, #991b1b)",
             }}
           >
-            ➤
+            <Send size={16} />
           </button>
         </div>
       </div>

@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+const TELEGRAM_BOT_TOKEN =
+  process.env.NEXT_PUBLIC_BOT_TOKEN!;
 
 export async function GET(req: Request) {
   try {
@@ -11,60 +10,97 @@ export async function GET(req: Request) {
 
     let telegramUrl = directUrl;
 
-    // ------------------------------------------------
-    // If file_id is provided, resolve Telegram file path
-    // server-side so bot token never reaches browser
-    // ------------------------------------------------
+    // -----------------------------------------
+    // Resolve Telegram file_id
+    // -----------------------------------------
     if (!telegramUrl && fileId) {
       const fileResponse = await fetch(
         `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${encodeURIComponent(
           fileId
-        )}`
+        )}`,
+        {
+          cache: "no-store",
+        }
       );
 
       const fileData = await fileResponse.json();
 
-      if (!fileData.ok || !fileData.result?.file_path) {
-        return new Response("Telegram file not found", {
-          status: 404,
-        });
+      console.log("Telegram getFile response:", fileData);
+
+      if (
+        !fileData.ok ||
+        !fileData.result?.file_path
+      ) {
+        return new Response(
+          JSON.stringify({
+            error: "Telegram file not found",
+            telegram: fileData,
+          }),
+          {
+            status: 404,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
       }
 
-      telegramUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${fileData.result.file_path}`;
+      telegramUrl =
+        `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${fileData.result.file_path}`;
     }
 
     if (!telegramUrl) {
-      return new Response("Missing file_id or url", {
-        status: 400,
-      });
+      return new Response(
+        "Missing file_id or url",
+        {
+          status: 400,
+        }
+      );
     }
 
-    // ------------------------------------------------
-    // Forward Range header for audio seeking
-    // ------------------------------------------------
+    // -----------------------------------------
+    // Forward Range header
+    // -----------------------------------------
 
     const range = req.headers.get("range");
 
-    const upstream = await fetch(telegramUrl, {
-      headers: range
-        ? {
-            Range: range,
-          }
-        : {},
-    });
+    const upstream = await fetch(
+      telegramUrl,
+      {
+        headers: range
+          ? {
+              Range: range,
+            }
+          : {},
+        cache: "no-store",
+      }
+    );
 
-    if (!upstream.ok && upstream.status !== 206) {
-      return new Response("Failed to fetch file", {
-        status: 502,
-      });
+    if (
+      !upstream.ok &&
+      upstream.status !== 206
+    ) {
+      console.error(
+        "Telegram file fetch failed:",
+        upstream.status,
+        upstream.statusText
+      );
+
+      return new Response(
+        "Failed to fetch Telegram file",
+        {
+          status: 502,
+        }
+      );
     }
 
     const headers = new Headers();
 
     headers.set(
       "Content-Type",
-      upstream.headers.get("content-type") ||
-        "audio/mpeg"
+      upstream.headers.get(
+        "content-type"
+      ) || "audio/mpeg"
     );
 
     headers.set(
@@ -82,21 +118,21 @@ export async function GET(req: Request) {
       "public, max-age=3600"
     );
 
-    // ------------------------------------------------
-    // Important for audio seeking
-    // ------------------------------------------------
+    // -----------------------------------------
+    // Audio seeking
+    // -----------------------------------------
 
-    const acceptRanges =
-      upstream.headers.get("accept-ranges");
-
-    if (acceptRanges) {
-      headers.set("Accept-Ranges", acceptRanges);
-    } else {
-      headers.set("Accept-Ranges", "bytes");
-    }
+    headers.set(
+      "Accept-Ranges",
+      upstream.headers.get(
+        "accept-ranges"
+      ) || "bytes"
+    );
 
     const contentRange =
-      upstream.headers.get("content-range");
+      upstream.headers.get(
+        "content-range"
+      );
 
     if (contentRange) {
       headers.set(
@@ -106,7 +142,9 @@ export async function GET(req: Request) {
     }
 
     const contentLength =
-      upstream.headers.get("content-length");
+      upstream.headers.get(
+        "content-length"
+      );
 
     if (contentLength) {
       headers.set(
@@ -115,10 +153,13 @@ export async function GET(req: Request) {
       );
     }
 
-    return new Response(upstream.body, {
-      status: upstream.status,
-      headers,
-    });
+    return new Response(
+      upstream.body,
+      {
+        status: upstream.status,
+        headers,
+      }
+    );
   } catch (error) {
     console.error(
       "File proxy error:",
@@ -142,7 +183,8 @@ export async function OPTIONS() {
         "GET, HEAD, OPTIONS",
       "Access-Control-Allow-Headers":
         "Range",
-      "Access-Control-Max-Age": "86400",
+      "Access-Control-Max-Age":
+        "86400",
     },
   });
 }

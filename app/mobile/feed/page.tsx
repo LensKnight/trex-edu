@@ -4,12 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../src/lib/supabase";
 import useAuth from "../../../src/hooks/useAuth";
 import { useTheme } from "../../../src/context/ThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard,
-  BookOpen,
-  PlusSquare,
-  MessageCircle,
-  CircleUserRound,
   TriangleAlert,
   FileText,
   Image as ImageIcon,
@@ -17,7 +13,11 @@ import {
   Heart,
   Award,
   ExternalLink,
+  Download,
   X,
+  Search,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import MobileNavbar from "@/components/MobileNavbar";
 import { buildTrexViewLink } from "../../../src/lib/trexview";
@@ -28,26 +28,20 @@ type Note = {
   subject: string;
   category?: string;
   file_id?: string;
-  file_type?: string; // e.g. "pdf", "jpg", "png" — populated from DB if column exists
+  file_type?: string;
   likes: number;
   uploader_id: string;
   uploader_name?: string;
 };
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
-
 const CATEGORIES = ["All", "School Notes", "Extra Notes", "TreX Special", "Projects"];
 
-// Pulls a real extension out of a Telegram file_path, e.g. "documents/file_72.pdf" -> "pdf".
-// Telegram often omits the extension entirely (e.g. "documents/file_72"), so this can return "".
 function extFromFilePath(filePath: string): string {
   const match = filePath.match(/\.([a-zA-Z0-9]+)$/);
   return match ? match[1].toLowerCase() : "";
 }
 
-// Decides pdf vs image for the viewer. Priority: real extension from Telegram path,
-// then the note's own file_type from the DB, then the Telegram folder prefix
-// ("photos/" vs "documents/"), then default to pdf since that's the common case for notes.
 function inferViewerType(filePath: string, noteFileType?: string): "pdf" | "image" {
   const pathExt = extFromFilePath(filePath);
   const dbExt = (noteFileType || "").toLowerCase().replace(".", "");
@@ -59,7 +53,6 @@ function inferViewerType(filePath: string, noteFileType?: string): "pdf" | "imag
   return "pdf";
 }
 
-// Returns badge info (label + icon + colors) based on file extension
 function getFileBadge(fileType?: string, darkMode?: boolean) {
   const ext = (fileType || "").toLowerCase().replace(".", "");
 
@@ -67,7 +60,7 @@ function getFileBadge(fileType?: string, darkMode?: boolean) {
     return {
       label: "FILE",
       Icon: FileIcon,
-      color: darkMode ? "#d4d4d8" : "#52525b",
+      color: darkMode ? "#a1a1aa" : "#64748b",
     };
   }
 
@@ -90,21 +83,20 @@ function getFileBadge(fileType?: string, darkMode?: boolean) {
   return {
     label: ext.toUpperCase(),
     Icon: FileIcon,
-    color: darkMode ? "#d4d4d8" : "#52525b",
+    color: darkMode ? "#a1a1aa" : "#64748b",
   };
 }
 
-// Distinct accent color per subject — used as the card's "index tab" spine
 function getSubjectAccent(subject: string) {
   const map: Record<string, string> = {
     Physics: "#f97316",
-    Chemistry: "#22c55e",
+    Chemistry: "#10b981",
     Mathematics: "#3b82f6",
     "Computer Science": "#a855f7",
     English: "#ec4899",
     "Physical Education": "#eab308",
   };
-  return map[subject] || "#8b0000";
+  return map[subject] || "#dc2626";
 }
 
 function getInitials(name?: string) {
@@ -117,32 +109,29 @@ function getInitials(name?: string) {
 
 export default function MobileFeedPage() {
   const { session, loading } = useAuth();
-  const { darkMode, setDarkMode } = useTheme();
+  const { darkMode } = useTheme();
   const [notes, setNotes] = useState<Note[]>([]);
   const [liking, setLiking] = useState<string | null>(null);
   const [likedNotes, setLikedNotes] = useState<string[]>([]);
   const [reportedNotes, setReportedNotes] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewerUrl, setViewerUrl] = useState("");
-  const [viewerType, setViewerType] = useState<"image" | "pdf" | "other">("other");
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [downloading, setDownloading] = useState<string | null>(null);
 
-  // Report confirmation modal state
   const [reportTarget, setReportTarget] = useState<Note | null>(null);
   const [reportAgreed, setReportAgreed] = useState(false);
   const [reportSubmitting, setReportSubmitting] = useState(false);
 
   const bg = darkMode
-    ? "linear-gradient(135deg, #3d0000 0%, #1a0000 30%, #000000 70%)"
-    : "linear-gradient(135deg, #fff5f5 0%, #ffe4e4 40%, #ffffff 100%)";
-  const textColor = darkMode ? "#ffffff" : "#1a0000";
-  const subTextColor = darkMode ? "#a1a1aa" : "#8b0000";
+    ? "radial-gradient(ellipse at top, #1a0808 0%, #09090b 100%)"
+    : "radial-gradient(ellipse at top, #fef2f2 0%, #f8fafc 100%)";
+  const textColor = darkMode ? "#f4f4f5" : "#0f172a";
+  const subTextColor = darkMode ? "#a1a1aa" : "#64748b";
   const cardBg = darkMode
-    ? "linear-gradient(160deg, #1c1c1f 0%, #150505 100%)"
-    : "linear-gradient(160deg, #ffe0e0 0%, #ffc9c9 100%)";
-  const border = darkMode ? "1px solid #3f0000" : "1px solid #ffb3b3";
-  const inputBg = darkMode ? "#1b1b1e" : "#ffd0d0";
+    ? "rgba(24, 24, 27, 0.75)"
+    : "rgba(255, 255, 255, 0.85)";
+  const border = darkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)";
+  const inputBg = darkMode ? "rgba(24, 24, 27, 0.8)" : "rgba(241, 245, 249, 0.9)";
 
   useEffect(() => {
     if (!loading && session) {
@@ -154,28 +143,37 @@ export default function MobileFeedPage() {
 
   useEffect(() => {
     if (!session) return;
-    const channel = supabase.channel("mobile-notes-realtime")
+    const channel = supabase
+      .channel("mobile-notes-realtime")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notes" }, async () => await fetchNotes())
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notes" }, async () => await fetchNotes())
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "notes" }, async () => await fetchNotes())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [session]);
 
   async function fetchNotes() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
     const { data: profile } = await supabase.from("profiles").select("class_name, section").eq("id", user.id).single();
     if (!profile) return;
-    const { data } = await supabase.from("notes").select("*, profiles(full_name)").eq("class_name", profile.class_name).eq("section", profile.section).order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("notes")
+      .select("*, profiles(full_name)")
+      .eq("class_name", profile.class_name)
+      .eq("section", profile.section)
+      .order("created_at", { ascending: false });
+
     if (data) {
       setNotes(
         data.map((n: any) => ({
           ...n,
           uploader_name: n.profiles?.full_name || "Unknown",
           category: n.category || "School Notes",
-          // falls back gracefully to undefined if the notes table
-          // doesn't have a file_type / file_name column yet
           file_type:
             n.file_type ||
             n.file_ext ||
@@ -221,21 +219,54 @@ export default function MobileFeedPage() {
     }
   };
 
+  async function downloadNote(note: Note) {
+    if (!note.file_id) return alert("File not found");
+    if (downloading === note.id) return;
+
+    setDownloading(note.id);
+
+    try {
+      const res = await fetch(`/api/download?file_id=${note.file_id}`);
+      if (!res.ok) throw new Error("Server error");
+
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const ext = note.file_type || "pdf";
+      const fileName = `${note.title}.${ext}`;
+
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.log(err);
+      alert("Download failed");
+    } finally {
+      setDownloading(null);
+    }
+  }
+
   async function likeNote(note: Note) {
     if (!session || liking === note.id) return;
     setLiking(note.id);
     const { error } = await supabase.from("note_likes").insert({ note_id: note.id, user_id: session.user.id });
-    if (error) { setLiking(null); return; }
+    if (error) {
+      setLiking(null);
+      return;
+    }
     const newLikes = (note.likes || 0) + 1;
     await supabase.from("notes").update({ likes: newLikes }).eq("id", note.id);
     setLikedNotes((prev) => [...prev, note.id]);
-    setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, likes: newLikes } : n));
+    setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, likes: newLikes } : n)));
     setLiking(null);
   }
 
   async function unlikeNote(note: Note) {
-    if (!session) return;
-    if (liking === note.id) return;
+    if (!session || liking === note.id) return;
 
     setLiking(note.id);
 
@@ -252,31 +283,20 @@ export default function MobileFeedPage() {
 
     const newLikes = Math.max((note.likes || 0) - 1, 0);
 
-    await supabase
-      .from("notes")
-      .update({ likes: newLikes })
-      .eq("id", note.id);
+    await supabase.from("notes").update({ likes: newLikes }).eq("id", note.id);
 
     setLikedNotes((prev) => prev.filter((id) => id !== note.id));
-
-    setNotes((prev) =>
-      prev.map((n) =>
-        n.id === note.id ? { ...n, likes: newLikes } : n
-      )
-    );
+    setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, likes: newLikes } : n)));
 
     setLiking(null);
   }
 
-  // Step 1: Report button click -> open confirmation modal (no report yet)
   function askReportConfirmation(note: Note) {
     if (!session) return;
 
-    if (reportedNotes.includes(note.id))
-      return alert("Already reported!");
+    if (reportedNotes.includes(note.id)) return alert("Already reported!");
 
-    if (note.uploader_id === session.user.id)
-      return alert("Apna note report nahi kar sakte!");
+    if (note.uploader_id === session.user.id) return alert("Apna note report nahi kar sakte!");
 
     setReportAgreed(false);
     setReportTarget(note);
@@ -288,10 +308,8 @@ export default function MobileFeedPage() {
     setReportAgreed(false);
   }
 
-  // Step 2: Actual report submission, only called after checkbox confirm
   async function confirmReport() {
-    if (!session || !reportTarget) return;
-    if (!reportAgreed) return;
+    if (!session || !reportTarget || !reportAgreed) return;
 
     const note = reportTarget;
     setReportSubmitting(true);
@@ -305,7 +323,10 @@ export default function MobileFeedPage() {
 
     setReportedNotes((prev) => [...prev, note.id]);
 
-    const { count } = await supabase.from("note_reports").select("*", { count: "exact", head: true }).eq("note_id", note.id);
+    const { count } = await supabase
+      .from("note_reports")
+      .select("*", { count: "exact", head: true })
+      .eq("note_id", note.id);
 
     if ((count ?? 0) >= 10) {
       await supabase.from("notes").delete().eq("id", note.id);
@@ -322,72 +343,100 @@ export default function MobileFeedPage() {
     }
   }
 
-  const filteredBySearch = notes.filter((note) =>
-    (activeCategory === "All" || note.category === activeCategory) &&
-    (note.title.toLowerCase().includes(search.toLowerCase()) ||
-      note.subject.toLowerCase().includes(search.toLowerCase()))
+  const filteredBySearch = notes.filter(
+    (note) =>
+      (activeCategory === "All" || note.category === activeCategory) &&
+      (note.title.toLowerCase().includes(search.toLowerCase()) ||
+        note.subject.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const subjects = ["Physics","Chemistry","Mathematics","Computer Science","English","Physical Education"];
+  const subjects = ["Physics", "Chemistry", "Mathematics", "Computer Science", "English", "Physical Education"];
 
   return (
-    <div className="min-h-screen pb-24 transition-all duration-500" style={{background: bg, color: textColor}}>
-        {loading && (
-          <div className="loading-screen">
-            <img src="/toggle-icon.png" className="loading-x" alt="loading" />
-            <div className="loading-text">Loading Notes</div>
-          </div>
-        )}
+    <div className="min-h-screen pb-28 transition-colors duration-300" style={{ background: bg, color: textColor }}>
+      {loading && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md">
+          <Loader2 className="w-8 h-8 animate-spin text-red-500 mb-2" />
+          <div className="text-sm font-medium tracking-wide text-zinc-300">Loading Notes...</div>
+        </div>
+      )}
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 pt-6">
-        <div>
-          <p className="text-xs font-medium tracking-widest uppercase mb-1" style={{color: subTextColor}}>Community</p>
-          <h1
-            className="text-2xl"
-            style={{ fontFamily: "'Baloo 2', sans-serif", fontWeight: 700 }}
-          >
-            Notes Feed
-          </h1>
-          <div className="mt-1 h-0.5 w-12 rounded-full" style={{background: "linear-gradient(90deg, #8b0000, transparent)"}} />
+      <div className="p-4 pt-6 max-w-lg mx-auto">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+              <Sparkles size={10} /> Community Hub
+            </span>
+            <h1 className="text-2xl mt-1 font-bold tracking-tight">Notes Feed</h1>
+          </div>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="px-4 mb-3">
-        <input
-          type="text"
-          placeholder="🔍 Search notes..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-3 rounded-2xl outline-none"
-          style={{background: inputBg, color: textColor, border}}
-        />
+      {/* Handwriting disclaimer */}
+      <div className="px-4 mb-4 max-w-lg mx-auto">
+        <div
+          className="flex items-start gap-2.5 p-3 rounded-2xl text-xs leading-relaxed backdrop-blur-md"
+          style={{
+            background: darkMode ? "rgba(239, 68, 68, 0.08)" : "rgba(239, 68, 68, 0.05)",
+            border: darkMode ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(239, 68, 68, 0.15)",
+            color: subTextColor,
+          }}
+        >
+          <TriangleAlert size={15} className="shrink-0 mt-0.5 text-red-500" />
+          <span>
+            Notes are contributed by students — double check details before relying on them completely.
+          </span>
+        </div>
       </div>
 
-      {/* Category tabs */}
+      {/* Search Bar */}
+      <div className="px-4 mb-4 max-w-lg mx-auto">
+        <div className="relative flex items-center">
+          <Search size={16} className="absolute left-3.5 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Search notes or subjects..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl outline-none text-xs font-medium transition-all duration-200 border"
+            style={{
+              background: inputBg,
+              color: textColor,
+              borderColor: border,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Category Pills */}
       <div
-        className="flex gap-2 overflow-x-auto px-4 mb-5 pb-1 [&::-webkit-scrollbar]:hidden"
+        className="flex gap-2 overflow-x-auto px-4 mb-6 pb-1 [&::-webkit-scrollbar]:hidden max-w-lg mx-auto"
         style={{ scrollbarWidth: "none" }}
       >
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className="shrink-0 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors"
-            style={{
-              background: activeCategory === cat ? "#8b0000" : inputBg,
-              color: activeCategory === cat ? "#ffffff" : textColor,
-              border,
-            }}
-          >
-            {cat}
-          </button>
-        ))}
+        {CATEGORIES.map((cat) => {
+          const isActive = activeCategory === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className="shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-200"
+              style={{
+                background: isActive ? "#dc2626" : inputBg,
+                color: isActive ? "#ffffff" : subTextColor,
+                border: isActive ? "1px solid #ef4444" : `1px solid ${border}`,
+                boxShadow: isActive ? "0 4px 12px rgba(220, 38, 38, 0.25)" : "none",
+              }}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Notes — horizontal scroll rows per subject */}
-      <div>
+      {/* Notes Horizontal Rows */}
+      <div className="max-w-lg mx-auto">
         {subjects.map((subject) => {
           const filteredNotes = filteredBySearch.filter((note) => note.subject === subject);
           if (filteredNotes.length === 0) return null;
@@ -395,29 +444,26 @@ export default function MobileFeedPage() {
           const accent = getSubjectAccent(subject);
 
           return (
-            <div key={subject} className="mb-7">
-              <div className="flex items-center gap-2 px-4 mb-3">
-                <div
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ background: accent }}
-                />
-                <h2 className="text-base font-bold">{subject}</h2>
+            <div key={subject} className="mb-6">
+              <div className="flex items-center justify-between px-4 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
+                  <h2 className="text-sm font-bold tracking-tight">{subject}</h2>
+                </div>
                 <span
-                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                   style={{
                     color: subTextColor,
-                    background: darkMode
-                      ? "rgba(255,255,255,0.06)"
-                      : "rgba(139,0,0,0.06)",
+                    background: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
                   }}
                 >
-                  {filteredNotes.length}
+                  {filteredNotes.length} {filteredNotes.length === 1 ? "Note" : "Notes"}
                 </span>
               </div>
 
               {/* Horizontal snap-scroll row */}
               <div
-                className="flex gap-3 overflow-x-auto snap-x snap-mandatory pl-4 pr-4 pb-2 [&::-webkit-scrollbar]:hidden"
+                className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory px-4 pb-3 [&::-webkit-scrollbar]:hidden"
                 style={{ scrollbarWidth: "none" }}
               >
                 {filteredNotes.map((note) => {
@@ -427,67 +473,62 @@ export default function MobileFeedPage() {
                   const fileBadge = getFileBadge(note.file_type, darkMode);
 
                   return (
-                    <div
+                    <motion.div
                       key={note.id}
-                      className="relative shrink-0 snap-start w-[72vw] max-w-[280px] pl-5 pr-4 py-4 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform duration-150"
+                      whileHover={{ y: -2 }}
+                      className="relative shrink-0 snap-start w-[75vw] max-w-[270px] p-4 rounded-3xl overflow-hidden backdrop-blur-xl transition-all"
                       style={{
                         background: cardBg,
-                        border,
+                        border: `1px solid ${border}`,
                         boxShadow: darkMode
-                          ? "0 1px 2px rgba(0,0,0,0.3), 0 10px 22px -12px rgba(0,0,0,0.55)"
-                          : "0 1px 2px rgba(139,0,0,0.05), 0 10px 22px -14px rgba(139,0,0,0.25)",
+                          ? "0 10px 30px -10px rgba(0,0,0,0.5)"
+                          : "0 10px 25px -10px rgba(0,0,0,0.08)",
                       }}
                     >
-                      {/* Subject spine — index-card tab */}
-                      <div
-                        className="absolute inset-y-0 left-0 w-[4px]"
-                        style={{ background: accent }}
-                      />
+                      {/* Top Accent Strip */}
+                      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: accent }} />
 
-                      {/* Students Choice ribbon */}
+                      {/* Top ribbon if likes >= 10 */}
                       {note.likes >= 10 && (
                         <div
-                          className="absolute top-0 right-0 flex items-center gap-1 pl-2.5 pr-3 py-1 rounded-bl-xl rounded-tr-2xl text-[9px] font-bold tracking-wide"
+                          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide"
                           style={{
-                            background: "linear-gradient(135deg, #b8860b, #6b4a00)",
-                            color: "#fff7d6",
+                            background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                            color: "#ffffff",
                           }}
                         >
-                          <Award size={10} />
-                          TOP
+                          <Award size={10} /> TOP
                         </div>
                       )}
 
-                      {/* Eyebrow: avatar + name + subject */}
-                      <div className="flex items-center gap-2 mb-3">
+                      {/* Header info */}
+                      <div className="flex items-center gap-2 mb-3 mt-1">
                         <div
                           className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
                           style={{
-                            background: `${accent}22`,
+                            background: `${accent}18`,
                             color: accent,
-                            border: `1px solid ${accent}44`,
+                            border: `1px solid ${accent}33`,
                           }}
                         >
                           {getInitials(isOwn ? "You" : note.uploader_name)}
                         </div>
 
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="text-[11px] font-semibold truncate" style={{ color: textColor }}>
                             {isOwn ? "You" : note.uploader_name}
                           </p>
-                          <p
-                            className="text-[9px] font-bold uppercase tracking-widest truncate"
-                            style={{ color: accent }}
-                          >
-                            {note.subject}
+                          <p className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: accent }}>
+                            {note.category}
                           </p>
                         </div>
 
                         <div
-                          className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold ml-auto shrink-0"
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold"
                           style={{
-                            border: `1px solid ${fileBadge.color}55`,
+                            background: `${fileBadge.color}15`,
                             color: fileBadge.color,
+                            border: `1px solid ${fileBadge.color}30`,
                           }}
                         >
                           <fileBadge.Icon size={10} />
@@ -496,45 +537,47 @@ export default function MobileFeedPage() {
                       </div>
 
                       {/* Title */}
-                      <h3
-                        className="text-base mb-4 leading-snug line-clamp-2"
-                        style={{
-                          fontFamily: "'Baloo 2', sans-serif",
-                          fontWeight: 700,
-                        }}
-                      >
+                      <h3 className="text-xs font-bold mb-4 line-clamp-2 h-8 leading-snug" style={{ color: textColor }}>
                         {note.title}
                       </h3>
 
                       {/* Actions */}
                       <div
-                        className="flex items-center gap-1.5 pt-3"
-                        style={{
-                          borderTop: darkMode
-                            ? "1px dashed rgba(255,255,255,0.12)"
-                            : "1px dashed rgba(139,0,0,0.15)",
-                        }}
+                        className="flex items-center gap-1.5 pt-2.5"
+                        style={{ borderTop: `1px border-dashed ${border}` }}
                       >
                         <button
                           onClick={() => openNote(note)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold"
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold active:scale-95 transition-transform"
                           style={{ background: accent, color: "#ffffff" }}
                         >
-                          <ExternalLink size={11} />
-                          Open
+                          <ExternalLink size={11} /> Open
                         </button>
 
                         <button
-                          onClick={() => likeNote(note)}
-                          disabled={liking === note.id || isOwn}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold"
+                          onClick={() => downloadNote(note)}
+                          disabled={downloading === note.id}
+                          className="p-1.5 rounded-xl border transition-all active:scale-95"
                           style={{
-                            background: "transparent",
-                            border: darkMode
-                              ? "1px solid rgba(255,255,255,0.14)"
-                              : "1px solid rgba(139,0,0,0.15)",
+                            borderColor: border,
+                            color: textColor,
+                            opacity: downloading === note.id ? 0.5 : 1,
+                          }}
+                        >
+                          {downloading === note.id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Download size={12} />
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => (alreadyLiked ? unlikeNote(note) : likeNote(note))}
+                          disabled={liking === note.id || isOwn}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] font-semibold border transition-all active:scale-95"
+                          style={{
+                            borderColor: border,
                             color: alreadyLiked ? "#ef4444" : subTextColor,
-                            cursor: alreadyLiked || isOwn ? "not-allowed" : "pointer",
                             opacity: isOwn ? 0.5 : 1,
                           }}
                         >
@@ -546,18 +589,17 @@ export default function MobileFeedPage() {
                           <button
                             onClick={() => askReportConfirmation(note)}
                             disabled={alreadyReported}
-                            className="flex items-center justify-center p-1.5 rounded-lg ml-auto"
+                            className="p-1.5 rounded-xl ml-auto transition-colors"
                             style={{
                               color: alreadyReported ? subTextColor : "#ef4444",
-                              cursor: alreadyReported ? "not-allowed" : "pointer",
-                              opacity: alreadyReported ? 0.6 : 1,
+                              opacity: alreadyReported ? 0.4 : 1,
                             }}
                           >
-                            <TriangleAlert size={13} />
+                            <TriangleAlert size={12} />
                           </button>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -566,143 +608,97 @@ export default function MobileFeedPage() {
         })}
 
         {filteredBySearch.length === 0 && search && (
-          <div className="text-center mt-20 px-4">
-            <p className="text-3xl mb-3">🔍</p>
-            <p className="text-sm font-bold" style={{color: subTextColor}}>No notes found for "{search}"</p>
+          <div className="text-center py-16 px-4">
+            <Search size={32} className="mx-auto mb-2 text-zinc-400 opacity-60" />
+            <p className="text-xs font-semibold" style={{ color: subTextColor }}>
+              No notes matched "{search}"
+            </p>
           </div>
         )}
       </div>
 
       {/* REPORT CONFIRMATION MODAL */}
-      {reportTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{
-            background: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(4px)",
-          }}
-          onClick={closeReportModal}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-t-3xl p-6 relative"
-            style={{
-              background: darkMode
-                ? "linear-gradient(160deg, #1c1c1f 0%, #150505 100%)"
-                : "#ffffff",
-              border: darkMode
-                ? "1px solid #3f0000"
-                : "1px solid #ffb3b3",
-              color: textColor,
-              boxShadow: "0 -10px 40px rgba(0,0,0,0.5)",
-            }}
-          >
-            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: darkMode ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)" }} />
-
-            <button
+      <AnimatePresence>
+        {reportTarget && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={closeReportModal}
-              className="absolute top-4 right-4 p-1.5 rounded-full transition"
+            />
+
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 250 }}
+              className="relative w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 z-10 backdrop-blur-2xl"
               style={{
-                background: darkMode
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(0,0,0,0.05)",
+                background: darkMode ? "rgba(18, 18, 20, 0.95)" : "rgba(255, 255, 255, 0.95)",
+                border: `1px solid ${border}`,
+                color: textColor,
               }}
             >
-              <X size={16} />
-            </button>
+              <div className="w-10 h-1 bg-zinc-500/30 rounded-full mx-auto mb-4" />
 
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-              style={{
-                background: "rgba(220,38,38,0.15)",
-                color: "#ef4444",
-              }}
-            >
-              <TriangleAlert size={22} />
-            </div>
-
-            <h3 className="text-xl font-bold mb-2">
-              Report this note?
-            </h3>
-
-            <p
-              className="text-sm mb-4 leading-relaxed"
-              style={{ color: subTextColor }}
-            >
-              Through reports, we can remove incorrect / spam / irrelevant notes from the community. Please read these conditions carefully:
-            </p>
-
-            <ul
-              className="text-sm mb-5 space-y-2 leading-relaxed"
-              style={{ color: subTextColor }}
-            >
-              <li>• Only report genuine reasons (spam, wrong subject, offensive content, plagiarism).</li>
-              <li>• If a note receives multiple reports, it will be automatically removed and the uploader will face penalties.</li>
-              <li>• Fake or false reports may result in your account being reviewed.</li>
-              <li>• Once a report is submitted, it cannot be undone.</li>
-            </ul>
-
-            <label
-              className="flex items-start gap-2.5 mb-5 cursor-pointer select-none"
-              style={{ color: textColor }}
-            >
-              <input
-                type="checkbox"
-                checked={reportAgreed}
-                onChange={(e) => setReportAgreed(e.target.checked)}
-                className="mt-1 w-4 h-4 accent-red-600 cursor-pointer"
-              />
-              <span className="text-sm">
-                I confirm that I understand the above conditions and this report is genuine.
-              </span>
-            </label>
-
-            <div className="flex gap-3">
               <button
                 onClick={closeReportModal}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition"
-                style={{
-                  background: darkMode
-                    ? "rgba(255,255,255,0.06)"
-                    : "rgba(0,0,0,0.05)",
-                  color: textColor,
-                }}
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-zinc-500/10 transition"
               >
-                Cancel
+                <X size={16} />
               </button>
 
-              <button
-                onClick={confirmReport}
-                disabled={!reportAgreed || reportSubmitting}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition"
-                style={{
-                  background:
-                    !reportAgreed || reportSubmitting
-                      ? "rgba(220,38,38,0.15)"
-                      : "#ef4444",
-                  color:
-                    !reportAgreed || reportSubmitting
-                      ? "#ef4444"
-                      : "#ffffff",
-                  cursor:
-                    !reportAgreed || reportSubmitting
-                      ? "not-allowed"
-                      : "pointer",
-                  opacity: reportSubmitting ? 0.7 : 1,
-                }}
-              >
-                {reportSubmitting ? "Reporting..." : "Confirm Report"}
-              </button>
-            </div>
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 bg-red-500/10 text-red-500 border border-red-500/20">
+                <TriangleAlert size={20} />
+              </div>
+
+              <h3 className="text-lg font-bold mb-1">Report Note</h3>
+              <p className="text-xs mb-3 leading-relaxed" style={{ color: subTextColor }}>
+                Help clean up invalid content. Please read the terms carefully:
+              </p>
+
+              <ul className="text-xs mb-4 space-y-1.5 list-disc pl-4" style={{ color: subTextColor }}>
+                <li>Report only genuine issues (spam, offensive, wrong subject).</li>
+                <li>Multiple reports cause automatic content removal.</li>
+                <li>Misuse of reports may affect your account standing.</li>
+              </ul>
+
+              <label className="flex items-start gap-2.5 mb-5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={reportAgreed}
+                  onChange={(e) => setReportAgreed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-red-600 rounded"
+                />
+                <span className="text-xs" style={{ color: textColor }}>
+                  I confirm this report is truthful and accurate.
+                </span>
+              </label>
+
+              <div className="flex gap-2.5">
+                <button
+                  onClick={closeReportModal}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition bg-zinc-500/10 hover:bg-zinc-500/20"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={confirmReport}
+                  disabled={!reportAgreed || reportSubmitting}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition text-white bg-red-600 disabled:opacity-50"
+                >
+                  {reportSubmitting ? "Submitting..." : "Confirm Report"}
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
-     <MobileNavbar
-        darkMode={darkMode}
-        subTextColor={subTextColor}
-        border={border}
-      /> 
+      <MobileNavbar darkMode={darkMode} subTextColor={subTextColor} border={border} />
     </div>
   );
 }

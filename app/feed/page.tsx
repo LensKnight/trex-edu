@@ -36,6 +36,7 @@ import {
   Heart,
   Award,
   ExternalLink,
+  Download,
 } from "lucide-react";
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
@@ -123,7 +124,6 @@ function getInitials(name?: string) {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
-
 export default function FeedPage() {
   const { session, loading } = useAuth();
   const { darkMode, setDarkMode } = useTheme();
@@ -135,6 +135,7 @@ export default function FeedPage() {
   const [search, setSearch] = useState("");
   const [viewerOpen, setViewerOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   // Report confirmation modal state
   const [reportTarget, setReportTarget] = useState<Note | null>(null);
@@ -150,9 +151,7 @@ export default function FeedPage() {
   const cardBg = darkMode
     ? "linear-gradient(160deg, #1c1c1f 0%, #150505 100%)"
     : "linear-gradient(160deg, #ffe0e0 0%, #ffc9c9 100%)";
-  const border = darkMode
-    ? "1px solid #3f0000"
-    : "1px solid #ffb3b3";
+  const border = darkMode ? "1px solid #3f0000" : "1px solid #ffb3b3";
 
   const inputBg = darkMode ? "#1b1b1e" : "#ffd0d0";
 
@@ -246,8 +245,6 @@ export default function FeedPage() {
           ...n,
           uploader_name: n.profiles?.full_name || "Unknown",
           category: n.category || "School Notes",
-          // falls back gracefully to undefined if the notes table
-          // doesn't have a file_type / file_name column yet
           file_type:
             n.file_type ||
             n.file_ext ||
@@ -303,9 +300,39 @@ export default function FeedPage() {
     }
   };
 
+  // UPDATED: Fixed CORS and Telegram File download via internal API proxy
+  async function downloadNote(note: Note) {
+    if (!note.file_id) return alert("File not found");
+    if (downloading === note.id) return;
+
+    setDownloading(note.id);
+
+    try {
+      const res = await fetch(`/api/download?file_id=${note.file_id}`);
+      if (!res.ok) throw new Error("Server error");
+
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const ext = note.file_type || "pdf";
+      const fileName = `${note.title}.${ext}`;
+
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      alert("Download failed. Check your network connection.");
+    } finally {
+      setDownloading(null);
+    }
+  }
+
   async function likeNote(note: Note) {
     if (!session) return;
-
     if (liking === note.id) return;
 
     setLiking(note.id);
@@ -341,7 +368,7 @@ export default function FeedPage() {
     setLiking(null);
   }
 
-    async function unlikeNote(note: Note) {
+  async function unlikeNote(note: Note) {
     if (!session) return;
     if (liking === note.id) return;
 
@@ -535,6 +562,23 @@ export default function FeedPage() {
         </div>
       </div>
 
+      {/* Handwriting disclaimer */}
+      <div className="mb-4 md:mb-6">
+        <div
+          className="flex items-start gap-2 p-3 md:p-4 rounded-xl text-xs md:text-sm leading-relaxed"
+          style={{
+            background: darkMode ? "rgba(239,68,68,0.08)" : "rgba(139,0,0,0.06)",
+            border: darkMode ? "1px solid rgba(239,68,68,0.25)" : "1px solid rgba(139,0,0,0.15)",
+            color: subTextColor,
+          }}
+        >
+          <TriangleAlert size={15} className="shrink-0 mt-0.5" />
+          <span>
+            Some notes are handwritten by fellow students — handwriting and clarity may vary, so please cross-check important details before relying on them.
+          </span>
+        </div>
+      </div>
+
       {/* Search */}
       <div className="mb-4 hover: scale-102 transition-all duration-300">
         <input
@@ -725,6 +769,26 @@ export default function FeedPage() {
                       >
                         <ExternalLink size={12} />
                         Open Note
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          downloadNote(note)
+                        }
+                        disabled={downloading === note.id}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg transition text-xs font-semibold"
+                        style={{
+                          background: "transparent",
+                          border: darkMode
+                            ? "1px solid rgba(255,255,255,0.14)"
+                            : "1px solid rgba(139,0,0,0.15)",
+                          color: textColor,
+                          cursor: downloading === note.id ? "not-allowed" : "pointer",
+                          opacity: downloading === note.id ? 0.5 : 1,
+                        }}
+                      >
+                        <Download size={12} />
+                        {downloading === note.id ? "..." : "Download"}
                       </button>
 
                       <button
