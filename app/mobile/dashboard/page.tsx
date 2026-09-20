@@ -1,5 +1,6 @@
 "use client";
-
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../src/lib/supabase";
 import useAuth from "../../../src/hooks/useAuth";
@@ -22,6 +23,7 @@ import {
   Calendar,
   Clock,
   BookMarked,
+  Flame,
 } from "lucide-react";
 import MobileNavbar from "@/components/MobileNavbar";
 
@@ -47,6 +49,27 @@ type Exam = {
   topics: string[];
 };
 
+// Distinct accent color per subject — reused for icons, spines and badges
+function getSubjectAccent(subject: string) {
+  const map: Record<string, string> = {
+    Physics: "#f97316",
+    Chemistry: "#22c55e",
+    Mathematics: "#3b82f6",
+    "Computer Science": "#a855f7",
+    English: "#ec4899",
+    "Physical Education": "#eab308",
+  };
+  return map[subject] || "#ef4444";
+}
+
+function getInitials(name?: string) {
+  if (!name) return "?";
+  const parts = name.trim().split(" ").filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 export default function DesktopThemeDashboardPage() {
   const { session, loading } = useAuth();
   const { darkMode } = useTheme();
@@ -69,25 +92,49 @@ export default function DesktopThemeDashboardPage() {
       id: "1",
       title: "Mid-Term Physics Exam",
       subject: "Physics",
-      date: "Sep 22, 2026",
-      time: "10:00 AM - 1:00 PM",
+      date: "Sep 21, 2026",
+      time: "8:15 AM - 11:15 PM",
       topics: ["Electrostatics", "Current Electricity", "Magnetism"],
     },
     {
       id: "2",
-      title: "Unit Test Chemistry",
-      subject: "Chemistry",
-      date: "Sep 28, 2026",
-      time: "09:30 AM - 11:00 AM",
-      topics: ["Solutions", "Electrochemistry", "Chemical Kinetics"],
+      title: "Mid-Term English Exam",
+      subject: "English",
+      date: "Sep 23, 2026",
+      time: "8:15 AM - 11:15 PM",
+      topics: ["", "", ""],
     },
     {
       id: "3",
-      title: "CS Practical Assessment",
+      title: "Mid-Term Computer Science Exam",
       subject: "Computer Science",
-      date: "Oct 05, 2026",
-      time: "11:00 AM - 01:00 PM",
+      date: "Sep 25, 2026",
+      time: "8:15 AM - 11:15 PM",
       topics: ["Python File Handling", "Data Structures", "SQL"],
+    },
+      {
+      id: "4",
+      title: "Mid-Term Physical Education Exam",
+      subject: "Physical Education",
+      date: "Sep 28, 2026",
+      time: "8:15 AM - 11:15 PM",
+      topics: ["Chapter 1-6",],
+    },
+      {
+      id: "5",
+      title: "Mid-Term Mathematics Exam",
+      subject: "Mathematics",
+      date: "Sep 30, 2026",
+      time: "8:15 AM - 11:15 PM",
+      topics: ["", "", ""],
+    },
+      {
+      id: "6",
+      title: "Mid-Term Chemistry Exam",
+      subject: "Chemistry",
+      date: "Oct 05, 2026",
+      time: "8:15 AM - 11:15 PM",
+      topics: ["Solutions", "Electrochemistry", "Chemical Kinetics"],
     },
   ]);
 
@@ -111,6 +158,10 @@ export default function DesktopThemeDashboardPage() {
   const sidebarBgClass = darkMode
     ? "bg-zinc-950/80 border-zinc-800/60"
     : "bg-white border-zinc-200";
+
+  const mobileTopBarClass = darkMode
+    ? "bg-zinc-950/80 border-zinc-800/60 backdrop-blur-xl"
+    : "bg-white/80 border-zinc-200 backdrop-blur-xl";
 
   const subTextClass = darkMode ? "text-zinc-400" : "text-zinc-500";
 
@@ -259,6 +310,27 @@ export default function DesktopThemeDashboardPage() {
     }
   }
 
+  const statCards = [
+    {
+      label: "Uploaded Notes",
+      value: notesCount,
+      icon: FileText,
+      color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    },
+    {
+      label: "Total XP",
+      value: xp,
+      icon: Zap,
+      color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    },
+    {
+      label: "Total Likes",
+      value: totalLikes,
+      icon: Heart,
+      color: "text-red-400 bg-red-500/10 border-red-500/20",
+    },
+  ];
+
   return (
     <div className={`min-h-screen flex ${bgClass}`}>
       {/* Desktop Navigation Sidebar */}
@@ -267,40 +339,42 @@ export default function DesktopThemeDashboardPage() {
       >
         <div className="space-y-6">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-xl bg-red-600 flex items-center justify-center font-black text-white text-base">
-              N
-            </div>
-            <span className="font-extrabold text-lg tracking-tight">Portal</span>
+            <span className="font-extrabold text-lg tracking-tight">TreX Edu</span>
           </div>
 
           <nav className="space-y-1">
             {[
-              { label: "Dashboard", icon: LayoutDashboard, active: true },
-              { label: "Materials", icon: BookOpen },
-              { label: "Announcements", icon: Megaphone },
-              { label: "Profile", icon: User },
-            ].map((item) => (
-              <button
-                key={item.label}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                  item.active
-                    ? darkMode
-                      ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                      : "bg-red-50 text-red-600 border border-red-200"
-                    : `${subTextClass} hover:bg-zinc-800/40 hover:text-zinc-200`
-                }`}
-              >
-                <item.icon size={16} />
-                <span>{item.label}</span>
-              </button>
-            ))}
+              { label: "Dashboard", icon: LayoutDashboard, href: "/mobile/dashboard" },
+              { label: "Materials", icon: BookOpen, href: "/mobile/feed" },
+              { label: "Announcements", icon: Megaphone, href: "/mobile/announcements" },
+              { label: "Profile", icon: User, href: "/mobile/profile" },
+            ].map((item) => {
+              const pathname = usePathname();
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    isActive
+                      ? darkMode
+                        ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                        : "bg-red-50 text-red-600 border border-red-200"
+                      : `${subTextClass} hover:bg-zinc-800/40 hover:text-zinc-200`
+                  }`}
+                >
+                  <item.icon size={16} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
         </div>
 
         <div className="border-t border-zinc-800/60 pt-4 px-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-xs">
-              {fullName ? fullName[0] : "U"}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center font-bold text-xs text-white">
+              {getInitials(fullName)}
             </div>
             <div className="text-xs">
               <p className="font-bold leading-none">{fullName}</p>
@@ -315,6 +389,25 @@ export default function DesktopThemeDashboardPage() {
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        {/* Mobile top bar — brand + notifications, sticky */}
+        <div
+          className={`md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b ${mobileTopBarClass}`}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="font-extrabold text-base tracking-tight">TreX Edu</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              className={`relative p-2 rounded-full border transition-all ${cardBgClass}`}
+            >
+              <Bell size={15} className={subTextClass} />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
+            </button>
+
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-screen">
             <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
@@ -323,9 +416,9 @@ export default function DesktopThemeDashboardPage() {
             </span>
           </div>
         ) : (
-          <main className="max-w-7xl w-full mx-auto p-4 md:p-8 space-y-8 pb-28 md:pb-8">
+          <main className="max-w-7xl w-full mx-auto p-4 md:p-8 space-y-6 md:space-y-8 pb-28 md:pb-8">
             {/* Header Bar */}
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/40 pb-6">
+            <header className="hidden md:flex flex-row items-center justify-between gap-4 border-b border-zinc-800/40 pb-6">
               <div>
                 <p
                   className={`text-xs font-medium uppercase tracking-wider ${subTextClass}`}
@@ -353,60 +446,83 @@ export default function DesktopThemeDashboardPage() {
               </div>
             </header>
 
+            {/* Mobile greeting + XP hero card */}
+            <div
+              className={`md:hidden rounded-3xl p-5 border overflow-hidden relative ${cardBgClass}`}
+              style={{
+                backgroundImage: darkMode
+                  ? "radial-gradient(120% 100% at 100% 0%, rgba(239,68,68,0.12), transparent 60%)"
+                  : "radial-gradient(120% 100% at 100% 0%, rgba(239,68,68,0.08), transparent 60%)",
+              }}
+            >
+              <p className={`text-[11px] font-semibold uppercase tracking-widest ${subTextClass}`}>
+                Welcome back
+              </p>
+              <h1 className="text-xl font-extrabold tracking-tight mt-0.5">
+                {fullName} 👋
+              </h1>
+
+              <div className="flex items-center gap-2 mt-4">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                  <Zap size={13} className="text-amber-400" />
+                  <span className="text-xs font-bold text-amber-400">{xp} XP</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
+                  <Heart size={13} className="text-red-400" />
+                  <span className="text-xs font-bold text-red-400">{totalLikes} Likes</span>
+                </div>
+              </div>
+
+              <a
+                href="/mobile/announcements"
+                className="mt-4 flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-xs font-semibold bg-red-600 text-white active:scale-[0.98] transition-all shadow-md shadow-red-900/20"
+              >
+                <Megaphone size={14} />
+                <span>View Announcements</span>
+              </a>
+            </div>
+
             {/* Layout Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-8">
-                {/* Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {[
-                    {
-                      label: "Uploaded Notes",
-                      value: notesCount,
-                      icon: FileText,
-                      color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-                    },
-                    {
-                      label: "Total XP",
-                      value: xp,
-                      icon: Zap,
-                      color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-                    },
-                    {
-                      label: "Total Likes",
-                      value: totalLikes,
-                      icon: Heart,
-                      color: "text-red-400 bg-red-500/10 border-red-500/20",
-                    },
-                  ].map((stat) => (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+              <div className="lg:col-span-2 space-y-6 md:space-y-8">
+                {/* Stats — horizontal snap row on mobile, grid on desktop */}
+                <div
+                  className="flex md:grid md:grid-cols-3 gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-1 md:pb-0 [&::-webkit-scrollbar]:hidden"
+                  style={{ scrollbarWidth: "none" }}
+                >
+                  {statCards.map((stat) => (
                     <div
                       key={stat.label}
-                      className={`p-5 rounded-2xl border transition-all hover:scale-[1.01] ${cardBgClass}`}
+                      className={`shrink-0 snap-start w-[42vw] md:w-auto p-4 md:p-5 rounded-2xl border transition-all hover:scale-[1.01] ${cardBgClass}`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-xs font-medium ${subTextClass}`}>
+                        <span className={`text-[11px] md:text-xs font-medium ${subTextClass}`}>
                           {stat.label}
                         </span>
-                        <div className={`p-2 rounded-xl border ${stat.color}`}>
-                          <stat.icon size={16} />
+                        <div className={`p-1.5 md:p-2 rounded-xl border ${stat.color}`}>
+                          <stat.icon size={14} className="md:hidden" />
+                          <stat.icon size={16} className="hidden md:block" />
                         </div>
                       </div>
-                      <p className="text-3xl font-extrabold mt-3">{stat.value}</p>
+                      <p className="text-2xl md:text-3xl font-extrabold mt-2 md:mt-3">
+                        {stat.value}
+                      </p>
                     </div>
                   ))}
                 </div>
 
-                {/* Section with Desktop Toggle Switcher */}
+                {/* Section with Toggle Switcher */}
                 <section className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
-                    <h2 className="text-lg font-bold">
+                    <h2 className="text-base md:text-lg font-bold">
                       {activeTab === "notes" ? "My Notes" : "Upcoming Exams"}
                     </h2>
 
-                    {/* Toggle Switch Button Component */}
-                    <div className="inline-flex p-1 rounded-xl border border-zinc-800 bg-zinc-950/60 self-start sm:self-auto">
+                    {/* Toggle Switch — full width on mobile */}
+                    <div className="flex sm:inline-flex p-1 rounded-xl border border-zinc-800 bg-zinc-950/60 self-stretch sm:self-auto">
                       <button
                         onClick={() => setActiveTab("notes")}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                           activeTab === "notes"
                             ? "bg-red-600 text-white shadow-sm"
                             : `${subTextClass} hover:text-zinc-200`
@@ -418,7 +534,7 @@ export default function DesktopThemeDashboardPage() {
 
                       <button
                         onClick={() => setActiveTab("exams")}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                           activeTab === "exams"
                             ? "bg-red-600 text-white shadow-sm"
                             : `${subTextClass} hover:text-zinc-200`
@@ -441,20 +557,31 @@ export default function DesktopThemeDashboardPage() {
                         if (subjectNotes.length === 0) return null;
 
                         const isOpen = openSubject === subject;
+                        const accent = getSubjectAccent(subject);
 
                         return (
                           <div
                             key={subject}
-                            className={`rounded-2xl border overflow-hidden transition-all ${cardBgClass}`}
+                            className={`rounded-2xl border overflow-hidden transition-all relative ${cardBgClass}`}
                           >
+                            <div
+                              className="absolute inset-y-0 left-0 w-[3px]"
+                              style={{ background: accent }}
+                            />
                             <button
                               onClick={() =>
                                 setOpenSubject(isOpen ? null : subject)
                               }
-                              className="w-full flex items-center justify-between p-4 hover:bg-zinc-800/20 transition-colors text-left"
+                              className="w-full flex items-center justify-between p-4 pl-5 hover:bg-zinc-800/20 transition-colors text-left"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-zinc-800/60 text-zinc-300">
+                                <div
+                                  className="p-2 rounded-lg"
+                                  style={{
+                                    background: `${accent}1a`,
+                                    color: accent,
+                                  }}
+                                >
                                   <FileText size={16} />
                                 </div>
                                 <span className="text-sm font-semibold">
@@ -535,53 +662,70 @@ export default function DesktopThemeDashboardPage() {
                   {/* TAB 2: UPCOMING EXAMS VIEW */}
                   {activeTab === "exams" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {upcomingExams.map((exam) => (
-                        <div
-                          key={exam.id}
-                          className={`p-5 rounded-2xl border space-y-4 ${cardBgClass} hover:border-zinc-700 transition-all`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/20">
-                                {exam.subject}
-                              </span>
-                              <h3 className="font-bold text-sm mt-2">
-                                {exam.title}
-                              </h3>
-                            </div>
-                            <div className="p-2 rounded-xl bg-zinc-800/60 text-zinc-300 shrink-0">
-                              <BookMarked size={16} />
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5 text-xs">
-                            <div className={`flex items-center gap-2 ${subTextClass}`}>
-                              <Calendar size={13} className="text-red-400" />
-                              <span>{exam.date}</span>
-                            </div>
-                            <div className={`flex items-center gap-2 ${subTextClass}`}>
-                              <Clock size={13} className="text-amber-400" />
-                              <span>{exam.time}</span>
-                            </div>
-                          </div>
-
-                          <div className="border-t border-zinc-800/40 pt-3">
-                            <p className={`text-[11px] font-semibold mb-1.5 ${subTextClass}`}>
-                              Topics Included:
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {exam.topics.map((topic, i) => (
+                      {upcomingExams.map((exam) => {
+                        const accent = getSubjectAccent(exam.subject);
+                        return (
+                          <div
+                            key={exam.id}
+                            className={`p-5 rounded-2xl border space-y-4 relative overflow-hidden ${cardBgClass} hover:border-zinc-700 transition-all`}
+                          >
+                            <div
+                              className="absolute inset-y-0 left-0 w-[3px]"
+                              style={{ background: accent }}
+                            />
+                            <div className="flex items-start justify-between gap-2 pl-1.5">
+                              <div>
                                 <span
-                                  key={i}
-                                  className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-800/80 text-zinc-300 border border-zinc-700/50"
+                                  className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border"
+                                  style={{
+                                    background: `${accent}1a`,
+                                    color: accent,
+                                    borderColor: `${accent}33`,
+                                  }}
                                 >
-                                  {topic}
+                                  {exam.subject}
                                 </span>
-                              ))}
+                                <h3 className="font-bold text-sm mt-2">
+                                  {exam.title}
+                                </h3>
+                              </div>
+                              <div
+                                className="p-2 rounded-xl shrink-0"
+                                style={{ background: `${accent}1a`, color: accent }}
+                              >
+                                <BookMarked size={16} />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5 text-xs pl-1.5">
+                              <div className={`flex items-center gap-2 ${subTextClass}`}>
+                                <Calendar size={13} className="text-red-400" />
+                                <span>{exam.date}</span>
+                              </div>
+                              <div className={`flex items-center gap-2 ${subTextClass}`}>
+                                <Clock size={13} className="text-amber-400" />
+                                <span>{exam.time}</span>
+                              </div>
+                            </div>
+
+                            <div className="border-t border-zinc-800/40 pt-3 pl-1.5">
+                              <p className={`text-[11px] font-semibold mb-1.5 ${subTextClass}`}>
+                                Topics Included:
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {exam.topics.map((topic, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-800/80 text-zinc-300 border border-zinc-700/50"
+                                  >
+                                    {topic}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </section>
@@ -590,7 +734,7 @@ export default function DesktopThemeDashboardPage() {
               {/* Leaderboard Column */}
               <div className="lg:col-span-1">
                 <div
-                  className={`p-5 rounded-2xl border sticky top-8 space-y-4 ${cardBgClass}`}
+                  className={`p-5 rounded-2xl border lg:sticky lg:top-8 space-y-4 ${cardBgClass}`}
                 >
                   <div className="flex items-center justify-between border-b border-zinc-800/40 pb-3">
                     <div className="flex items-center gap-2">
@@ -600,35 +744,52 @@ export default function DesktopThemeDashboardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    {leaderboard.map((user, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-zinc-800/40 bg-zinc-900/30 hover:border-zinc-700/60 transition-all"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span
-                            className={`text-xs font-black w-5 text-center ${
-                              index === 0
-                                ? "text-amber-400"
-                                : index === 1
-                                ? "text-zinc-300"
-                                : index === 2
-                                ? "text-amber-600"
-                                : subTextClass
-                            }`}
-                          >
-                            #{index + 1}
-                          </span>
-                          <span className="text-xs font-semibold truncate">
-                            {user.full_name}
+                    {leaderboard.map((user, index) => {
+                      const isTop = index === 0;
+                      return (
+                        <div
+                          key={index}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
+                            isTop
+                              ? "border-amber-500/30 bg-amber-500/5"
+                              : "border-zinc-800/40 bg-zinc-900/30 hover:border-zinc-700/60"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span
+                              className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black shrink-0 ${
+                                index === 0
+                                  ? "bg-amber-500/15 text-amber-400"
+                                  : index === 1
+                                  ? "bg-zinc-500/15 text-zinc-300"
+                                  : index === 2
+                                  ? "bg-amber-800/20 text-amber-600"
+                                  : `bg-zinc-800/40 ${subTextClass}`
+                              }`}
+                            >
+                              {index + 1}
+                            </span>
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-200 shrink-0">
+                              {getInitials(user.full_name)}
+                            </div>
+                            <span className="text-xs font-semibold truncate">
+                              {user.full_name}
+                            </span>
+                          </div>
+
+                          <span className="flex items-center gap-1 text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                            {isTop && <Flame size={11} />}
+                            {user.xp} XP
                           </span>
                         </div>
+                      );
+                    })}
 
-                        <span className="text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                          {user.xp} XP
-                        </span>
-                      </div>
-                    ))}
+                    {leaderboard.length === 0 && (
+                      <p className={`text-xs text-center py-4 ${subTextClass}`}>
+                        No leaderboard data yet.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

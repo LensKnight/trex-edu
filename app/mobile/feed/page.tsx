@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { supabase } from "../../../src/lib/supabase";
 import useAuth from "../../../src/hooks/useAuth";
 import { useTheme } from "../../../src/context/ThemeContext";
@@ -18,6 +20,11 @@ import {
   Search,
   Sparkles,
   Loader2,
+  LayoutDashboard,
+  BookOpen,
+  Megaphone,
+  User,
+  Bell,
 } from "lucide-react";
 import MobileNavbar from "@/components/MobileNavbar";
 import { buildTrexViewLink } from "../../../src/lib/trexview";
@@ -36,6 +43,13 @@ type Note = {
 
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
 const CATEGORIES = ["All", "School Notes", "Extra Notes", "TreX Special", "Projects"];
+
+const NAV_ITEMS = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/mobile/dashboard" },
+  { label: "Notes Feed", icon: BookOpen, href: "/mobile/feed" },
+  { label: "Announcements", icon: Megaphone, href: "/mobile/announcements" },
+  { label: "Profile", icon: User, href: "/mobile/profile" },
+];
 
 function extFromFilePath(filePath: string): string {
   const match = filePath.match(/\.([a-zA-Z0-9]+)$/);
@@ -110,6 +124,7 @@ function getInitials(name?: string) {
 export default function MobileFeedPage() {
   const { session, loading } = useAuth();
   const { darkMode } = useTheme();
+  const pathname = usePathname();
   const [notes, setNotes] = useState<Note[]>([]);
   const [liking, setLiking] = useState<string | null>(null);
   const [likedNotes, setLikedNotes] = useState<string[]>([]);
@@ -132,6 +147,7 @@ export default function MobileFeedPage() {
     : "rgba(255, 255, 255, 0.85)";
   const border = darkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)";
   const inputBg = darkMode ? "rgba(24, 24, 27, 0.8)" : "rgba(241, 245, 249, 0.9)";
+  const sidebarBg = darkMode ? "rgba(9, 9, 11, 0.9)" : "rgba(255, 255, 255, 0.9)";
 
   useEffect(() => {
     if (!loading && session) {
@@ -353,268 +369,342 @@ export default function MobileFeedPage() {
   const subjects = ["Physics", "Chemistry", "Mathematics", "Computer Science", "English", "Physical Education"];
 
   return (
-    <div className="min-h-screen pb-28 transition-colors duration-300" style={{ background: bg, color: textColor }}>
-      {loading && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md">
-          <Loader2 className="w-8 h-8 animate-spin text-red-500 mb-2" />
-          <div className="text-sm font-medium tracking-wide text-zinc-300">Loading Notes...</div>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="p-4 pt-6 max-w-lg mx-auto">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
-              <Sparkles size={10} /> Community Hub
-            </span>
-            <h1 className="text-2xl mt-1 font-bold tracking-tight">Notes Feed</h1>
-          </div>
-        </div>
-      </div>
-
-      {/* Handwriting disclaimer */}
-      <div className="px-4 mb-4 max-w-lg mx-auto">
-        <div
-          className="flex items-start gap-2.5 p-3 rounded-2xl text-xs leading-relaxed backdrop-blur-md"
-          style={{
-            background: darkMode ? "rgba(239, 68, 68, 0.08)" : "rgba(239, 68, 68, 0.05)",
-            border: darkMode ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(239, 68, 68, 0.15)",
-            color: subTextColor,
-          }}
-        >
-          <TriangleAlert size={15} className="shrink-0 mt-0.5 text-red-500" />
-          <span>
-            Notes are contributed by students — double check details before relying on them completely.
-          </span>
-        </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="px-4 mb-4 max-w-lg mx-auto">
-        <div className="relative flex items-center">
-          <Search size={16} className="absolute left-3.5 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search notes or subjects..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl outline-none text-xs font-medium transition-all duration-200 border"
-            style={{
-              background: inputBg,
-              color: textColor,
-              borderColor: border,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Category Pills */}
-      <div
-        className="flex gap-2 overflow-x-auto px-4 mb-6 pb-1 [&::-webkit-scrollbar]:hidden max-w-lg mx-auto"
-        style={{ scrollbarWidth: "none" }}
+    <div className="min-h-screen flex transition-colors duration-300" style={{ background: bg, color: textColor }}>
+      {/* Desktop sidebar */}
+      <aside
+        className="w-64 hidden md:flex flex-col justify-between p-4 sticky top-0 h-screen border-r backdrop-blur-xl shrink-0"
+        style={{ background: sidebarBg, borderColor: border }}
       >
-        {CATEGORIES.map((cat) => {
-          const isActive = activeCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className="shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-200"
-              style={{
-                background: isActive ? "#dc2626" : inputBg,
-                color: isActive ? "#ffffff" : subTextColor,
-                border: isActive ? "1px solid #ef4444" : `1px solid ${border}`,
-                boxShadow: isActive ? "0 4px 12px rgba(220, 38, 38, 0.25)" : "none",
-              }}
-            >
-              {cat}
-            </button>
-          );
-        })}
-      </div>
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <span className="font-extrabold text-lg tracking-tight">TreX Edu</span>
+          </div>
 
-      {/* Notes Horizontal Rows */}
-      <div className="max-w-lg mx-auto">
-        {subjects.map((subject) => {
-          const filteredNotes = filteredBySearch.filter((note) => note.subject === subject);
-          if (filteredNotes.length === 0) return null;
-
-          const accent = getSubjectAccent(subject);
-
-          return (
-            <div key={subject} className="mb-6">
-              <div className="flex items-center justify-between px-4 mb-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
-                  <h2 className="text-sm font-bold tracking-tight">{subject}</h2>
-                </div>
-                <span
-                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+          <nav className="space-y-1">
+            {NAV_ITEMS.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
                   style={{
-                    color: subTextColor,
-                    background: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                    background: isActive ? "rgba(220, 38, 38, 0.1)" : "transparent",
+                    color: isActive ? "#ef4444" : subTextColor,
+                    border: isActive ? "1px solid rgba(220, 38, 38, 0.2)" : "1px solid transparent",
                   }}
                 >
-                  {filteredNotes.length} {filteredNotes.length === 1 ? "Note" : "Notes"}
-                </span>
-              </div>
+                  <item.icon size={16} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-              {/* Horizontal snap-scroll row */}
-              <div
-                className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory px-4 pb-3 [&::-webkit-scrollbar]:hidden"
-                style={{ scrollbarWidth: "none" }}
-              >
-                {filteredNotes.map((note) => {
-                  const alreadyLiked = likedNotes.includes(note.id);
-                  const alreadyReported = reportedNotes.includes(note.id);
-                  const isOwn = note.uploader_id === session?.user.id;
-                  const fileBadge = getFileBadge(note.file_type, darkMode);
-
-                  return (
-                    <motion.div
-                      key={note.id}
-                      whileHover={{ y: -2 }}
-                      className="relative shrink-0 snap-start w-[75vw] max-w-[270px] p-4 rounded-3xl overflow-hidden backdrop-blur-xl transition-all"
-                      style={{
-                        background: cardBg,
-                        border: `1px solid ${border}`,
-                        boxShadow: darkMode
-                          ? "0 10px 30px -10px rgba(0,0,0,0.5)"
-                          : "0 10px 25px -10px rgba(0,0,0,0.08)",
-                      }}
-                    >
-                      {/* Top Accent Strip */}
-                      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: accent }} />
-
-                      {/* Top ribbon if likes >= 10 */}
-                      {note.likes >= 10 && (
-                        <div
-                          className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide"
-                          style={{
-                            background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                            color: "#ffffff",
-                          }}
-                        >
-                          <Award size={10} /> TOP
-                        </div>
-                      )}
-
-                      {/* Header info */}
-                      <div className="flex items-center gap-2 mb-3 mt-1">
-                        <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                          style={{
-                            background: `${accent}18`,
-                            color: accent,
-                            border: `1px solid ${accent}33`,
-                          }}
-                        >
-                          {getInitials(isOwn ? "You" : note.uploader_name)}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] font-semibold truncate" style={{ color: textColor }}>
-                            {isOwn ? "You" : note.uploader_name}
-                          </p>
-                          <p className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: accent }}>
-                            {note.category}
-                          </p>
-                        </div>
-
-                        <div
-                          className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold"
-                          style={{
-                            background: `${fileBadge.color}15`,
-                            color: fileBadge.color,
-                            border: `1px solid ${fileBadge.color}30`,
-                          }}
-                        >
-                          <fileBadge.Icon size={10} />
-                          {fileBadge.label}
-                        </div>
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="text-xs font-bold mb-4 line-clamp-2 h-8 leading-snug" style={{ color: textColor }}>
-                        {note.title}
-                      </h3>
-
-                      {/* Actions */}
-                      <div
-                        className="flex items-center gap-1.5 pt-2.5"
-                        style={{ borderTop: `1px border-dashed ${border}` }}
-                      >
-                        <button
-                          onClick={() => openNote(note)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold active:scale-95 transition-transform"
-                          style={{ background: accent, color: "#ffffff" }}
-                        >
-                          <ExternalLink size={11} /> Open
-                        </button>
-
-                        <button
-                          onClick={() => downloadNote(note)}
-                          disabled={downloading === note.id}
-                          className="p-1.5 rounded-xl border transition-all active:scale-95"
-                          style={{
-                            borderColor: border,
-                            color: textColor,
-                            opacity: downloading === note.id ? 0.5 : 1,
-                          }}
-                        >
-                          {downloading === note.id ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : (
-                            <Download size={12} />
-                          )}
-                        </button>
-
-                        <button
-                          onClick={() => (alreadyLiked ? unlikeNote(note) : likeNote(note))}
-                          disabled={liking === note.id || isOwn}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] font-semibold border transition-all active:scale-95"
-                          style={{
-                            borderColor: border,
-                            color: alreadyLiked ? "#ef4444" : subTextColor,
-                            opacity: isOwn ? 0.5 : 1,
-                          }}
-                        >
-                          <Heart size={11} fill={alreadyLiked ? "#ef4444" : "none"} />
-                          {note.likes || 0}
-                        </button>
-
-                        {!isOwn && (
-                          <button
-                            onClick={() => askReportConfirmation(note)}
-                            disabled={alreadyReported}
-                            className="p-1.5 rounded-xl ml-auto transition-colors"
-                            style={{
-                              color: alreadyReported ? subTextColor : "#ef4444",
-                              opacity: alreadyReported ? 0.4 : 1,
-                            }}
-                          >
-                            <TriangleAlert size={12} />
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+        <div
+          className="border-t pt-4 px-2 flex items-center justify-between"
+          style={{ borderColor: border }}
+        >
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white"
+              style={{ background: "linear-gradient(135deg, #ef4444, #991b1b)" }}
+            >
+              {getInitials(session?.user?.user_metadata?.full_name)}
             </div>
-          );
-        })}
+            <div className="text-xs">
+              <p className="font-bold leading-none">Student</p>
+              <p className="text-[10px] mt-0.5" style={{ color: subTextColor }}>
+                TreX Edu
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
 
-        {filteredBySearch.length === 0 && search && (
-          <div className="text-center py-16 px-4">
-            <Search size={32} className="mx-auto mb-2 text-zinc-400 opacity-60" />
-            <p className="text-xs font-semibold" style={{ color: subTextColor }}>
-              No notes matched "{search}"
-            </p>
+      {/* Main column */}
+      <div className="flex-1 min-w-0 pb-28 md:pb-8">
+        {loading && (
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md">
+            <Loader2 className="w-8 h-8 animate-spin text-red-500 mb-2" />
+            <div className="text-sm font-medium tracking-wide text-zinc-300">Loading Notes...</div>
           </div>
         )}
+
+        {/* Mobile top bar — brand + notifications, sticky */}
+        <div
+          className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b backdrop-blur-xl"
+          style={{ background: sidebarBg, borderColor: border }}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="font-extrabold text-base tracking-tight">TreX Edu</span>
+          </div>
+
+          <button
+            className="relative p-2 rounded-full border"
+            style={{ borderColor: border, background: cardBg }}
+          >
+            <Bell size={15} style={{ color: subTextColor }} />
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
+          </button>
+        </div>
+
+        {/* Header */}
+        <div className="p-4 pt-6 max-w-lg md:max-w-3xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+                <Sparkles size={10} /> Community Hub
+              </span>
+              <h1 className="text-2xl mt-1 font-bold tracking-tight">Notes Feed</h1>
+            </div>
+          </div>
+        </div>
+
+        {/* Handwriting disclaimer */}
+        <div className="px-4 mb-4 max-w-lg md:max-w-3xl mx-auto">
+          <div
+            className="flex items-start gap-2.5 p-3 rounded-2xl text-xs leading-relaxed backdrop-blur-md"
+            style={{
+              background: darkMode ? "rgba(239, 68, 68, 0.08)" : "rgba(239, 68, 68, 0.05)",
+              border: darkMode ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(239, 68, 68, 0.15)",
+              color: subTextColor,
+            }}
+          >
+            <TriangleAlert size={15} className="shrink-0 mt-0.5 text-red-500" />
+            <span>
+              Notes are contributed by students — double check details before relying on them completely.
+            </span>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-4 mb-4 max-w-lg md:max-w-3xl mx-auto">
+          <div className="relative flex items-center">
+            <Search size={16} className="absolute left-3.5 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search notes or subjects..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl outline-none text-xs font-medium transition-all duration-200 border"
+              style={{
+                background: inputBg,
+                color: textColor,
+                borderColor: border,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Category Pills */}
+        <div
+          className="flex gap-2 overflow-x-auto px-4 mb-6 pb-1 [&::-webkit-scrollbar]:hidden max-w-lg md:max-w-3xl mx-auto"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {CATEGORIES.map((cat) => {
+            const isActive = activeCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className="shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-200"
+                style={{
+                  background: isActive ? "#dc2626" : inputBg,
+                  color: isActive ? "#ffffff" : subTextColor,
+                  border: isActive ? "1px solid #ef4444" : `1px solid ${border}`,
+                  boxShadow: isActive ? "0 4px 12px rgba(220, 38, 38, 0.25)" : "none",
+                }}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Notes Horizontal Rows */}
+        <div className="max-w-lg md:max-w-3xl mx-auto">
+          {subjects.map((subject) => {
+            const filteredNotes = filteredBySearch.filter((note) => note.subject === subject);
+            if (filteredNotes.length === 0) return null;
+
+            const accent = getSubjectAccent(subject);
+
+            return (
+              <div key={subject} className="mb-6">
+                <div className="flex items-center justify-between px-4 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
+                    <h2 className="text-sm font-bold tracking-tight">{subject}</h2>
+                  </div>
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{
+                      color: subTextColor,
+                      background: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    {filteredNotes.length} {filteredNotes.length === 1 ? "Note" : "Notes"}
+                  </span>
+                </div>
+
+                {/* Horizontal snap-scroll row */}
+                <div
+                  className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory px-4 pb-3 [&::-webkit-scrollbar]:hidden"
+                  style={{ scrollbarWidth: "none" }}
+                >
+                  {filteredNotes.map((note) => {
+                    const alreadyLiked = likedNotes.includes(note.id);
+                    const alreadyReported = reportedNotes.includes(note.id);
+                    const isOwn = note.uploader_id === session?.user.id;
+                    const fileBadge = getFileBadge(note.file_type, darkMode);
+
+                    return (
+                      <motion.div
+                        key={note.id}
+                        whileHover={{ y: -2 }}
+                        className="relative shrink-0 snap-start w-[75vw] max-w-[270px] p-4 rounded-3xl overflow-hidden backdrop-blur-xl transition-all"
+                        style={{
+                          background: cardBg,
+                          border: `1px solid ${border}`,
+                          boxShadow: darkMode
+                            ? "0 10px 30px -10px rgba(0,0,0,0.5)"
+                            : "0 10px 25px -10px rgba(0,0,0,0.08)",
+                        }}
+                      >
+                        {/* Top Accent Strip */}
+                        <div className="absolute top-0 left-0 right-0 h-1" style={{ background: accent }} />
+
+                        {/* Top ribbon if likes >= 10 */}
+                        {note.likes >= 10 && (
+                          <div
+                            className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide"
+                            style={{
+                              background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                              color: "#ffffff",
+                            }}
+                          >
+                            <Award size={10} /> TOP
+                          </div>
+                        )}
+
+                        {/* Header info */}
+                        <div className="flex items-center gap-2 mb-3 mt-1">
+                          <div
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                            style={{
+                              background: `${accent}18`,
+                              color: accent,
+                              border: `1px solid ${accent}33`,
+                            }}
+                          >
+                            {getInitials(isOwn ? "You" : note.uploader_name)}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-semibold truncate" style={{ color: textColor }}>
+                              {isOwn ? "You" : note.uploader_name}
+                            </p>
+                            <p className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: accent }}>
+                              {note.category}
+                            </p>
+                          </div>
+
+                          <div
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold"
+                            style={{
+                              background: `${fileBadge.color}15`,
+                              color: fileBadge.color,
+                              border: `1px solid ${fileBadge.color}30`,
+                            }}
+                          >
+                            <fileBadge.Icon size={10} />
+                            {fileBadge.label}
+                          </div>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-xs font-bold mb-4 line-clamp-2 h-8 leading-snug" style={{ color: textColor }}>
+                          {note.title}
+                        </h3>
+
+                        {/* Actions */}
+                        <div
+                          className="flex items-center gap-1.5 pt-2.5"
+                          style={{ borderTop: `1px border-dashed ${border}` }}
+                        >
+                          <button
+                            onClick={() => openNote(note)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold active:scale-95 transition-transform"
+                            style={{ background: accent, color: "#ffffff" }}
+                          >
+                            <ExternalLink size={11} /> Open
+                          </button>
+
+                          <button
+                            onClick={() => downloadNote(note)}
+                            disabled={downloading === note.id}
+                            className="p-1.5 rounded-xl border transition-all active:scale-95"
+                            style={{
+                              borderColor: border,
+                              color: textColor,
+                              opacity: downloading === note.id ? 0.5 : 1,
+                            }}
+                          >
+                            {downloading === note.id ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <Download size={12} />
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => (alreadyLiked ? unlikeNote(note) : likeNote(note))}
+                            disabled={liking === note.id || isOwn}
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] font-semibold border transition-all active:scale-95"
+                            style={{
+                              borderColor: border,
+                              color: alreadyLiked ? "#ef4444" : subTextColor,
+                              opacity: isOwn ? 0.5 : 1,
+                            }}
+                          >
+                            <Heart size={11} fill={alreadyLiked ? "#ef4444" : "none"} />
+                            {note.likes || 0}
+                          </button>
+
+                          {!isOwn && (
+                            <button
+                              onClick={() => askReportConfirmation(note)}
+                              disabled={alreadyReported}
+                              className="p-1.5 rounded-xl ml-auto transition-colors"
+                              style={{
+                                color: alreadyReported ? subTextColor : "#ef4444",
+                                opacity: alreadyReported ? 0.4 : 1,
+                              }}
+                            >
+                              <TriangleAlert size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {filteredBySearch.length === 0 && search && (
+            <div className="text-center py-16 px-4">
+              <Search size={32} className="mx-auto mb-2 text-zinc-400 opacity-60" />
+              <p className="text-xs font-semibold" style={{ color: subTextColor }}>
+                No notes matched "{search}"
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* REPORT CONFIRMATION MODAL */}
@@ -698,7 +788,9 @@ export default function MobileFeedPage() {
         )}
       </AnimatePresence>
 
-      <MobileNavbar darkMode={darkMode} subTextColor={subTextColor} border={border} />
+      <div className="md:hidden">
+        <MobileNavbar darkMode={darkMode} subTextColor={subTextColor} border={border} />
+      </div>
     </div>
   );
 }

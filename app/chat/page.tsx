@@ -195,7 +195,7 @@ export default function ChatPage() {
             </div>
           );
         })}
-        <div ref={bottomRef} />
+
       </div>
 
       {/* TYPING INDICATOR */}
