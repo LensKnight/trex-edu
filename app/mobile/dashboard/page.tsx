@@ -94,15 +94,37 @@ export default function DesktopThemeDashboardPage() {
       subject: "Physics",
       date: "Sep 21, 2026",
       time: "8:15 AM - 11:15 PM",
-      topics: ["Electrostatics", "Current Electricity", "Magnetism"],
+      topics: [
+          "Electric Charges and Fields",
+          "Electrostatic Potential and Capacitance",
+          "Current Electricity",
+          "Moving Charges and Magnetism",
+          "Magnetism and Matter",
+          "Electromagnetic Induction",
+          "Alternating Current",
+          "Ray Optics (till Lenses)"
+        ],
     },
     {
       id: "2",
       title: "Mid-Term English Exam",
       subject: "English",
       date: "Sep 23, 2026",
-      time: "8:15 AM - 11:15 PM",
-      topics: ["", "", ""],
+      time: "8:15 AM - 11:15 AM",
+      topics: [
+        "The Last Lesson",
+        "Lost Spring",
+        "Deep Water",
+        "The Rattrap",
+        "Indigo",
+        "My Mother at Sixty-Six",
+        "Keeping Quiet",
+        "A Roadside Stand",
+        "The Third Level",
+        "The Tiger King",
+        "Journey to the End of the Earth",
+        "The Enemy"
+      ],
     },
     {
       id: "3",
@@ -110,7 +132,7 @@ export default function DesktopThemeDashboardPage() {
       subject: "Computer Science",
       date: "Sep 25, 2026",
       time: "8:15 AM - 11:15 PM",
-      topics: ["Python File Handling", "Data Structures", "SQL"],
+      topics: ["Python (class notes)", "SQL (class notes)", "RDBMS (class notes)"],
     },
       {
       id: "4",
@@ -126,7 +148,15 @@ export default function DesktopThemeDashboardPage() {
       subject: "Mathematics",
       date: "Sep 30, 2026",
       time: "8:15 AM - 11:15 PM",
-      topics: ["", "", ""],
+      topics: [
+        "Relations and Functions",
+        "Inverse Trigonometric Functions",
+        "Matrices",
+        "Determinants",
+        "Continuity and Differentiability",
+        "Application of Derivatives",
+        "Integrals"
+      ],
     },
       {
       id: "6",
@@ -134,7 +164,14 @@ export default function DesktopThemeDashboardPage() {
       subject: "Chemistry",
       date: "Oct 05, 2026",
       time: "8:15 AM - 11:15 PM",
-      topics: ["Solutions", "Electrochemistry", "Chemical Kinetics"],
+      topics: [
+        "Solutions",
+        "Electrochemistry",
+        "Chemical Kinetics",
+        "The d- and f-Block Elements",
+        "Coordination Compounds",
+        "The Haloalkanes and Haloarenes",
+      ],
     },
   ]);
 
