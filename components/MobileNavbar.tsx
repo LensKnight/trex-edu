@@ -27,11 +27,9 @@ export default function MobileNavbar({
   const navItems = [
     { href: "/mobile/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/mobile/feed", label: "Notes", icon: BookOpen },
-    { href: "/mobile/ai-teacher", label: "AI", icon: Bot },
     { href: "/mobile/upload", label: "Upload", icon: PlusSquare },
     { href: "/mobile/chat", label: "Chat", icon: MessageCircle },
     { href: "/mobile/profile", label: "Profile", icon: CircleUserRound },
-    { href: "/mobile/settings", label: "Settings", icon: Settings },
   ];
 
   return (

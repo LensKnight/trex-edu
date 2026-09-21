@@ -3,7 +3,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../../src/lib/supabase";
 import { useTheme } from "../../../src/context/ThemeContext";
-import { Send, Sparkles, Loader2, Users, Reply, X, ChevronDown } from "lucide-react";
+import { buildTrexViewLink } from "../../../src/lib/trexview";
+import {
+  Send,
+  Sparkles,
+  Loader2,
+  Users,
+  Reply,
+  X,
+  ChevronDown,
+  Paperclip,
+  Search,
+  ExternalLink,
+  FileText,
+  FileX,
+  File as FileIcon,
+  Image as ImageIcon,
+} from "lucide-react";
 import MobileNavbar from "@/components/MobileNavbar";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,6 +36,16 @@ type Profile = {
   username: string;
 };
 
+type NoteLite = {
+  id: string;
+  title: string;
+  subject: string;
+  category: string;
+  file_id?: string;
+  file_type?: string;
+  created_at?: string;
+};
+
 type Message = {
   id: string;
   message: string;
@@ -28,6 +54,8 @@ type Message = {
   section?: string;
   created_at: string;
   reply_to?: ReplyRef | null;
+  note_id?: string | null;
+  note_title?: string | null;
   profiles?: ProfileLite | ProfileLite[] | null;
 };
 
@@ -39,6 +67,7 @@ const NEAR_BOTTOM_PX = 120; // counts as "at the bottom" (auto-follow new messag
 const SHOW_BUTTON_PX = 200; // show the scroll-down button after this distance
 const TYPING_THROTTLE_MS = 1500;
 const TYPING_HIDE_MS = 2500;
+const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
 
 /* ───────────── Date helpers (WhatsApp style) ───────────── */
 
@@ -69,6 +98,132 @@ function getDayLabel(iso: string) {
   });
 }
 
+/* ───────────── Note helpers (same logic as the feed page) ───────────── */
+
+function normalizeNote(n: any): NoteLite {
+  return {
+    id: n.id,
+    title: n.title,
+    subject: n.subject,
+    category: n.category || "School Notes",
+    file_id: n.file_id,
+    file_type:
+      n.file_type || n.file_ext || n.file_name?.split(".").pop() || undefined,
+    created_at: n.created_at,
+  };
+}
+
+function extFromFilePath(filePath: string): string {
+  const match = filePath.match(/\.([a-zA-Z0-9]+)$/);
+  return match ? match[1].toLowerCase() : "";
+}
+
+function inferViewerType(filePath: string, noteFileType?: string): "pdf" | "image" {
+  const pathExt = extFromFilePath(filePath);
+  const dbExt = (noteFileType || "").toLowerCase().replace(".", "");
+  const ext = pathExt || dbExt;
+
+  if (IMAGE_EXTS.includes(ext)) return "image";
+  if (ext === "pdf") return "pdf";
+  if (filePath.startsWith("photos/")) return "image";
+  return "pdf";
+}
+
+function getFileBadge(fileType?: string) {
+  const ext = (fileType || "").toLowerCase().replace(".", "");
+
+  if (ext === "pdf") return { label: "PDF", Icon: FileText };
+  if (["jpg", "jpeg", "png", "webp"].includes(ext)) {
+    return { label: "IMG", Icon: ImageIcon };
+  }
+  return { label: ext ? ext.toUpperCase() : "FILE", Icon: FileIcon };
+}
+
+function getSubjectAccent(subject: string) {
+  const map: Record<string, string> = {
+    Physics: "#f97316",
+    Chemistry: "#10b981",
+    Mathematics: "#3b82f6",
+    "Computer Science": "#a855f7",
+    English: "#ec4899",
+    "Physical Education": "#eab308",
+  };
+  return map[subject] || "#dc2626";
+}
+
+/* ───────────── Note card shown inside a chat bubble ───────────── */
+
+function NoteCard({
+  note,
+  isMe,
+  darkMode,
+  opening,
+  onOpen,
+}: {
+  note: NoteLite | null;
+  isMe: boolean;
+  darkMode: boolean;
+  opening: boolean;
+  onOpen: (note: NoteLite) => void;
+}) {
+  const cardBg = isMe
+    ? "rgba(0, 0, 0, 0.18)"
+    : darkMode
+    ? "rgba(255, 255, 255, 0.06)"
+    : "rgba(0, 0, 0, 0.05)";
+
+  // Note was deleted after it was attached
+  if (!note) {
+    return (
+      <div
+        className="mt-1.5 flex items-center gap-2 rounded-xl px-2.5 py-2 text-[10px] font-medium opacity-80"
+        style={{ background: cardBg }}
+      >
+        <FileX size={14} className="shrink-0" />
+        <span className="truncate">Note no longer available</span>
+      </div>
+    );
+  }
+
+  const accent = getSubjectAccent(note.subject);
+  const badge = getFileBadge(note.file_type);
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation(); // don't trigger "reply" on the bubble
+        onOpen(note);
+      }}
+      className="mt-1.5 w-full min-w-[200px] text-left flex items-center gap-2.5 rounded-xl overflow-hidden pr-2.5 active:scale-[0.98] transition-transform"
+      style={{ background: cardBg, borderLeft: `3px solid ${accent}` }}
+    >
+      <div
+        className="ml-2 my-2 w-8 h-8 rounded-lg flex flex-col items-center justify-center shrink-0"
+        style={{
+          background: isMe ? "rgba(255,255,255,0.2)" : `${accent}22`,
+          color: isMe ? "#ffffff" : accent,
+        }}
+      >
+        <badge.Icon size={14} />
+      </div>
+
+      <div className="min-w-0 flex-1 py-2">
+        <p className="text-[11px] font-bold leading-tight truncate">{note.title}</p>
+        <p className="text-[9px] font-semibold mt-0.5 truncate opacity-75">
+          {note.subject} · {note.category} · {badge.label}
+        </p>
+      </div>
+
+      {opening ? (
+        <Loader2 size={13} className="animate-spin shrink-0" />
+      ) : (
+        <ExternalLink size={13} className="shrink-0 opacity-80" />
+      )}
+    </button>
+  );
+}
+
 /* ───────────── Component ───────────── */
 
 export default function MobileChatPage() {
@@ -83,6 +238,15 @@ export default function MobileChatPage() {
   const [replyingTo, setReplyingTo] = useState<ReplyRef | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [onlineCount, setOnlineCount] = useState(0);
+
+  // Notes integration
+  const [notesMap, setNotesMap] = useState<Record<string, NoteLite>>({});
+  const [attachedNote, setAttachedNote] = useState<NoteLite | null>(null);
+  const [showNotePicker, setShowNotePicker] = useState(false);
+  const [noteSearch, setNoteSearch] = useState("");
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingChannelRef = useRef<any>(null);
@@ -91,6 +255,10 @@ export default function MobileChatPage() {
   const profileCacheRef = useRef<Record<string, ProfileLite>>({});
   const isNearBottomRef = useRef(true);
   const pendingScrollRef = useRef<"none" | "instant" | "smooth">("none");
+
+  // Always holds the latest notesMap (realtime handler reads it)
+  const notesMapRef = useRef(notesMap);
+  notesMapRef.current = notesMap;
 
   /* ───────────── Theme colors ───────────── */
 
@@ -116,6 +284,117 @@ export default function MobileChatPage() {
   const chipBg = darkMode
     ? "rgba(24, 24, 27, 0.85)"
     : "rgba(255, 255, 255, 0.9)";
+
+  const inputBg = darkMode
+    ? "rgba(39, 39, 42, 0.6)"
+    : "rgba(241, 245, 249, 0.8)";
+
+  // Typing indicator / scroll button sit above the input + any preview bars
+  const barCount = (replyingTo ? 1 : 0) + (attachedNote ? 1 : 0);
+  const overlayBottom = `${9 + barCount * 3.75}rem`;
+
+  /* ───────────── Notes: fetch + open ───────────── */
+
+  const fetchClassNotes = useCallback(
+    async (p: { class_name: string; section: string }) => {
+      const { data } = await supabase
+        .from("notes")
+        .select("*")
+        .eq("class_name", p.class_name)
+        .eq("section", p.section)
+        .order("created_at", { ascending: false });
+
+      const map: Record<string, NoteLite> = {};
+      (data || []).forEach((n: any) => {
+        const note = normalizeNote(n);
+        map[note.id] = note;
+      });
+
+      setNotesMap(map);
+    },
+    []
+  );
+
+  async function openNote(note: NoteLite) {
+    if (!note.file_id) return alert("File not found");
+    if (openingId === note.id) return;
+
+    // iOS Safari: window.open must run synchronously inside the tap,
+    // so open a blank tab first and fill it after the fetch
+    const newTab = window.open("", "_blank");
+
+    const fail = (msg: string) => {
+      newTab?.close();
+      alert(msg);
+    };
+
+    setOpeningId(note.id);
+
+    try {
+      const res = await fetch(
+        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${note.file_id}`
+      );
+      const data = await res.json();
+      if (!data.ok) return fail("Cannot open file");
+
+      const filePath: string = data.result.file_path;
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
+
+      const viewerType = inferViewerType(filePath, note.file_type);
+      const pathExt = extFromFilePath(filePath);
+      const displayExt =
+        pathExt || note.file_type || (viewerType === "image" ? "jpg" : "pdf");
+      const fileName = `${note.title}.${displayExt}`;
+
+      const link = buildTrexViewLink(fileUrl, fileName, viewerType);
+
+      if (newTab) {
+        newTab.location.href = link;
+      } else {
+        // Popup still blocked (e.g. home-screen app): open in the same tab
+        window.location.href = link;
+      }
+    } catch (err) {
+      console.log(err);
+      fail("Open failed");
+    } finally {
+      setOpeningId(null);
+    }
+  }
+
+  function openNotePicker() {
+    setNoteSearch("");
+    setShowNotePicker(true);
+
+    // Refresh the list so freshly uploaded notes show up
+    if (profile) {
+      setNotesLoading(true);
+      fetchClassNotes(profile).finally(() => setNotesLoading(false));
+    }
+  }
+
+  function closeNotePicker() {
+    setShowNotePicker(false);
+  }
+
+  function pickNote(note: NoteLite) {
+    setAttachedNote(note);
+    setShowNotePicker(false);
+  }
+
+  const pickerNotes = useMemo(() => {
+    const q = noteSearch.trim().toLowerCase();
+
+    return Object.values(notesMap)
+      .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""))
+      .filter(
+        (n) =>
+          !q ||
+          n.title.toLowerCase().includes(q) ||
+          n.subject.toLowerCase().includes(q) ||
+          n.category.toLowerCase().includes(q)
+      );
+  }, [notesMap, noteSearch]);
 
   /* ───────────── Scroll logic ───────────── */
 
@@ -181,6 +460,10 @@ export default function MobileChatPage() {
           profileCacheRef.current[p.id] = p;
         });
 
+        // Notes first, so note cards can render as soon as messages arrive
+        await fetchClassNotes(profileData);
+        if (cancelled) return;
+
         const { data } = await supabase
           .from("messages")
           .select(
@@ -190,6 +473,8 @@ export default function MobileChatPage() {
             user_id,
             created_at,
             reply_to,
+            note_id,
+            note_title,
             profiles (
               full_name,
               username
@@ -252,7 +537,7 @@ export default function MobileChatPage() {
       Object.values(typingTimeoutsRef.current).forEach(clearTimeout);
       typingTimeoutsRef.current = {};
     };
-  }, []);
+  }, [fetchClassNotes]);
 
   /* ───────────── Realtime new messages ───────────── */
 
@@ -264,7 +549,7 @@ export default function MobileChatPage() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
+        async (payload) => {
           const newMsg = payload.new as Message;
 
           // Ignore messages from other classes / sections
@@ -273,6 +558,20 @@ export default function MobileChatPage() {
             String(newMsg.section) !== String(profile.section)
           ) {
             return;
+          }
+
+          // Attached note not in our cache yet (uploaded after this page loaded)
+          if (newMsg.note_id && !notesMapRef.current[newMsg.note_id]) {
+            const { data } = await supabase
+              .from("notes")
+              .select("*")
+              .eq("id", newMsg.note_id)
+              .maybeSingle();
+
+            if (data) {
+              const note = normalizeNote(data);
+              setNotesMap((prev) => ({ ...prev, [note.id]: note }));
+            }
           }
 
           const isMine = newMsg.user_id === userId;
@@ -304,6 +603,53 @@ export default function MobileChatPage() {
     };
   }, [profile, userId]);
 
+  /* ───────────── Online users (Presence) ───────────── */
+
+  useEffect(() => {
+    if (!profile || !userId) return;
+
+    // key: userId → same user in 2 tabs is counted once
+    const channel = supabase.channel(
+      `presence-${profile.class_name}-${profile.section}`,
+      { config: { presence: { key: userId } } }
+    );
+
+    channel
+      .on("presence", { event: "sync" }, () => {
+        setOnlineCount(Object.keys(channel.presenceState()).length);
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({
+            user_id: userId,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile, userId]);
+
+  /* ───────────── Lock page scroll (only the feed scrolls) ───────────── */
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
+
   /* ───────────── Actions ───────────── */
 
   function handleTyping(e: React.ChangeEvent<HTMLInputElement>) {
@@ -324,7 +670,9 @@ export default function MobileChatPage() {
 
   async function sendMessage() {
     const body = text.trim();
-    if (!body || !profile || !userId) return;
+
+    // A message needs text, a note, or both
+    if ((!body && !attachedNote) || !profile || !userId) return;
 
     const { error } = await supabase.from("messages").insert({
       user_id: userId,
@@ -332,6 +680,8 @@ export default function MobileChatPage() {
       class_name: profile.class_name,
       section: profile.section,
       reply_to: replyingTo ?? null,
+      note_id: attachedNote?.id ?? null,
+      note_title: attachedNote?.title ?? null,
     });
 
     if (error) {
@@ -341,6 +691,7 @@ export default function MobileChatPage() {
 
     setText("");
     setReplyingTo(null);
+    setAttachedNote(null);
   }
 
   function getSender(msg: Message) {
@@ -348,6 +699,14 @@ export default function MobileChatPage() {
     return (
       p?.full_name || profileCacheRef.current[msg.user_id]?.full_name || "Student"
     );
+  }
+
+  // What to show in the reply preview / quote for a message
+  function getReplyPreview(msg: Message) {
+    if (msg.message) return msg.message;
+
+    const title = (msg.note_id && notesMap[msg.note_id]?.title) || msg.note_title;
+    return title ? `📎 ${title}` : "Message";
   }
 
   /* ───────────── Group messages by day ───────────── */
@@ -372,266 +731,455 @@ export default function MobileChatPage() {
   /* ───────────── UI ───────────── */
 
   return (
+    // Outer wrapper: fixed to the viewport, holds the background
     <div
-      className="flex flex-col h-dvh max-w-lg mx-auto relative overflow-hidden"
+      className="fixed inset-0 w-full overflow-hidden"
       style={{ background: bg, color: textColor }}
     >
-      {/* Loading Screen */}
-      {loading && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-md bg-black/60">
-          <Loader2 className="w-8 h-8 text-red-500 animate-spin mb-2" />
-          <p className="text-xs font-semibold tracking-wide text-zinc-300">
-            Connecting to Class Channel...
-          </p>
-        </div>
-      )}
-
-      {/* Header */}
-      <div
-        className="shrink-0 px-4 pt-5 pb-3 backdrop-blur-xl z-20 border-b flex items-center justify-between"
-        style={{
-          background: darkMode ? "rgba(18, 18, 20, 0.8)" : "rgba(255, 255, 255, 0.8)",
-          borderColor: border,
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
-            <Users size={20} />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-base font-bold tracking-tight">
-                {profile ? `Class ${profile.class_name}-${profile.section}` : "Class Chat"}
-              </h1>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
-            <p className="text-[10px] font-medium" style={{ color: subTextColor }}>
-              Real-time Peer Discussion
+      {/* Inner column: centered, max width */}
+      <div className="relative flex flex-col h-full w-full max-w-lg mx-auto">
+        {/* Loading Screen */}
+        {loading && (
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-md bg-black/60">
+            <Loader2 className="w-8 h-8 text-red-500 animate-spin mb-2" />
+            <p className="text-xs font-semibold tracking-wide text-zinc-300">
+              Connecting to Class Channel...
             </p>
           </div>
-        </div>
-
-        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-red-500/10 text-red-500 border border-red-500/20">
-          <Sparkles size={10} /> Live
-        </div>
-      </div>
-
-      {/* Messages Feed */}
-      <div
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 pt-4 space-y-3 pb-40"
-      >
-        {dayGroups.map((group) => (
-          <div key={group.key} className="space-y-3">
-            {/* Day separator (sticks to the top while scrolling that day) */}
-            <div className="sticky top-2 z-10 flex justify-center pointer-events-none">
-              <span
-                className="px-3 py-1 rounded-full text-[10px] font-semibold border backdrop-blur-md shadow-sm"
-                style={{ background: chipBg, borderColor: border, color: subTextColor }}
-              >
-                {group.label}
-              </span>
-            </div>
-
-            {group.messages.map((msg, i) => {
-              const isMe = msg.user_id === userId;
-              const senderName = getSender(msg);
-              const prev = group.messages[i - 1];
-              const showName = !isMe && (!prev || prev.user_id !== msg.user_id);
-
-              const formattedTime = new Date(msg.created_at).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-
-              return (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    onClick={() =>
-                      setReplyingTo({
-                        id: msg.id,
-                        message: msg.message,
-                        sender: senderName,
-                      })
-                    }
-                    className="max-w-[80%] px-3.5 py-2.5 shadow-sm border relative group cursor-pointer active:opacity-80 transition-opacity"
-                    style={{
-                      background: isMe ? myMsgBg : otherMsgBg,
-                      color: isMe ? "#ffffff" : textColor,
-                      borderColor: isMe ? "transparent" : border,
-                      borderRadius: isMe
-                        ? "20px 20px 4px 20px"
-                        : "20px 20px 20px 4px",
-                    }}
-                  >
-                    {showName && (
-                      <p className="text-[10px] font-bold mb-0.5 text-red-400">
-                        {senderName}
-                      </p>
-                    )}
-
-                    {/* Quoted reply */}
-                    {msg.reply_to && (
-                      <div
-                        className="mb-1.5 p-1.5 rounded-lg border-l-2 bg-black/10 text-[10px]"
-                        style={{ borderColor: isMe ? "#ffffff" : "#ef4444" }}
-                      >
-                        <p className="font-bold opacity-90">{msg.reply_to.sender}</p>
-                        <p className="truncate opacity-75">{msg.reply_to.message}</p>
-                      </div>
-                    )}
-
-                    <p className="text-xs leading-relaxed break-words font-medium">
-                      {msg.message}
-                    </p>
-
-                    <div
-                      className="text-[9px] mt-1 text-right font-medium opacity-70"
-                      style={{ color: isMe ? "#ffffff" : subTextColor }}
-                    >
-                      {formattedTime}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-
-      {/* Typing Indicator */}
-      <AnimatePresence>
-        {typingUsers.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className={`fixed left-0 right-0 max-w-lg mx-auto px-4 z-30 pointer-events-none ${
-              replyingTo ? "bottom-52" : "bottom-36"
-            }`}
-          >
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold border backdrop-blur-md shadow-lg"
-              style={{
-                background: darkMode ? "rgba(24, 24, 27, 0.9)" : "rgba(255, 255, 255, 0.9)",
-                borderColor: border,
-                color: subTextColor,
-              }}
-            >
-              <span className="text-red-500 font-bold">
-                {typingUsers.length === 1
-                  ? `${typingUsers[0]} is typing`
-                  : `${typingUsers.join(", ")} are typing`}
-              </span>
-              <span className="flex gap-1 items-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "300ms" }} />
-              </span>
-            </div>
-          </motion.div>
         )}
-      </AnimatePresence>
 
-      {/* Scroll To Bottom Button */}
-      <AnimatePresence>
-        {showScrollBtn && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className={`fixed left-0 right-0 max-w-lg mx-auto px-4 z-30 flex justify-end pointer-events-none ${
-              replyingTo ? "bottom-52" : "bottom-36"
-            }`}
-          >
-            <button
-              onClick={() => scrollToBottom(true)}
-              className="pointer-events-auto relative w-10 h-10 rounded-full flex items-center justify-center border shadow-lg backdrop-blur-xl active:scale-95 transition-transform"
-              style={{
-                background: darkMode ? "rgba(39, 39, 42, 0.95)" : "rgba(255, 255, 255, 0.95)",
-                borderColor: border,
-                color: textColor,
-              }}
-            >
-              <ChevronDown size={20} />
-
-              {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Input Section & Reply Preview */}
-      <div className="fixed left-0 right-0 max-w-lg mx-auto px-3 z-30 bottom-20">
-        <AnimatePresence>
-          {replyingTo && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              className="mb-1.5 p-2 rounded-2xl border flex items-center justify-between backdrop-blur-2xl shadow-md"
-              style={{
-                background: darkMode ? "rgba(18, 18, 20, 0.9)" : "rgba(255, 255, 255, 0.9)",
-                borderColor: border,
-              }}
-            >
-              <div className="flex items-center gap-2 overflow-hidden text-xs">
-                <Reply size={14} className="text-red-500 shrink-0 ml-1" />
-                <div className="truncate">
-                  <span className="font-bold text-red-500 block text-[10px]">
-                    Replying to {replyingTo.sender}
-                  </span>
-                  <span className="truncate block opacity-80" style={{ color: textColor }}>
-                    {replyingTo.message}
-                  </span>
-                </div>
+        {/* Header */}
+        <div
+          className="shrink-0 px-4 pt-5 pb-3 backdrop-blur-xl z-20 border-b flex items-center justify-between"
+          style={{
+            background: darkMode ? "rgba(18, 18, 20, 0.8)" : "rgba(255, 255, 255, 0.8)",
+            borderColor: border,
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+              <Users size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-base font-bold tracking-tight">
+                  {profile ? `Class ${profile.class_name}-${profile.section}` : "Class Chat"}
+                </h1>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-              <button
-                onClick={() => setReplyingTo(null)}
-                className="p-1 text-zinc-400 hover:text-zinc-200"
+              <p className="text-[10px] font-medium" style={{ color: subTextColor }}>
+                {onlineCount > 0 ? `${onlineCount} online` : "Connecting..."}
+              </p>
+            </div>
+          </div>
+
+          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-red-500/10 text-red-500 border border-red-500/20">
+           Beta
+          </div>
+        </div>
+
+        {/* Messages Feed */}
+        <div
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 space-y-3 pb-40"
+        >
+          {dayGroups.map((group) => (
+            <div key={group.key} className="space-y-3">
+              {/* Day separator (sticks to the top while scrolling that day) */}
+              <div className="sticky top-2 z-10 flex justify-center pointer-events-none">
+                <span
+                  className="px-3 py-1 rounded-full text-[10px] font-semibold border backdrop-blur-md shadow-sm"
+                  style={{ background: chipBg, borderColor: border, color: subTextColor }}
+                >
+                  {group.label}
+                </span>
+              </div>
+
+              {group.messages.map((msg, i) => {
+                const isMe = msg.user_id === userId;
+                const senderName = getSender(msg);
+                const prev = group.messages[i - 1];
+                const showName = !isMe && (!prev || prev.user_id !== msg.user_id);
+
+                const note = msg.note_id ? notesMap[msg.note_id] ?? null : null;
+                const hasNote = !!msg.note_id || !!msg.note_title;
+
+                const formattedTime = new Date(msg.created_at).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+
+                return (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      onClick={() =>
+                        setReplyingTo({
+                          id: msg.id,
+                          message: getReplyPreview(msg),
+                          sender: senderName,
+                        })
+                      }
+                      className="max-w-[80%] px-3.5 py-2.5 shadow-sm border relative group cursor-pointer active:opacity-80 transition-opacity"
+                      style={{
+                        background: isMe ? myMsgBg : otherMsgBg,
+                        color: isMe ? "#ffffff" : textColor,
+                        borderColor: isMe ? "transparent" : border,
+                        borderRadius: isMe
+                          ? "20px 20px 4px 20px"
+                          : "20px 20px 20px 4px",
+                      }}
+                    >
+                      {showName && (
+                        <p className="text-[10px] font-bold mb-0.5 text-red-400">
+                          {senderName}
+                        </p>
+                      )}
+
+                      {/* Quoted reply */}
+                      {msg.reply_to && (
+                        <div
+                          className="mb-1.5 p-1.5 rounded-lg border-l-2 bg-black/10 text-[10px]"
+                          style={{ borderColor: isMe ? "#ffffff" : "#ef4444" }}
+                        >
+                          <p className="font-bold opacity-90">{msg.reply_to.sender}</p>
+                          <p className="truncate opacity-75">{msg.reply_to.message}</p>
+                        </div>
+                      )}
+
+                      {msg.message && (
+                        <p className="text-xs leading-relaxed break-words font-medium">
+                          {msg.message}
+                        </p>
+                      )}
+
+                      {/* Attached note block */}
+                      {hasNote && (
+                        <NoteCard
+                          note={note}
+                          isMe={isMe}
+                          darkMode={darkMode}
+                          opening={!!note && openingId === note.id}
+                          onOpen={openNote}
+                        />
+                      )}
+
+                      <div
+                        className="text-[9px] mt-1 text-right font-medium opacity-70"
+                        style={{ color: isMe ? "#ffffff" : subTextColor }}
+                      >
+                        {formattedTime}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Typing Indicator */}
+        <AnimatePresence>
+          {typingUsers.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="fixed left-0 right-0 max-w-lg mx-auto px-4 z-30 pointer-events-none"
+              style={{ bottom: overlayBottom }}
+            >
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold border backdrop-blur-md shadow-lg"
+                style={{
+                  background: darkMode ? "rgba(24, 24, 27, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                  borderColor: border,
+                  color: subTextColor,
+                }}
               >
-                <X size={14} />
+                <span className="text-red-500 font-bold">
+                  {typingUsers.length === 1
+                    ? `${typingUsers[0]} is typing`
+                    : `${typingUsers.join(", ")} are typing`}
+                </span>
+                <span className="flex gap-1 items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Scroll To Bottom Button */}
+        <AnimatePresence>
+          {showScrollBtn && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="fixed left-0 right-0 max-w-lg mx-auto px-4 z-30 flex justify-end pointer-events-none"
+              style={{ bottom: overlayBottom }}
+            >
+              <button
+                onClick={() => scrollToBottom(true)}
+                className="pointer-events-auto relative w-10 h-10 rounded-full flex items-center justify-center border shadow-lg backdrop-blur-xl active:scale-95 transition-transform"
+                style={{
+                  background: darkMode ? "rgba(39, 39, 42, 0.95)" : "rgba(255, 255, 255, 0.95)",
+                  borderColor: border,
+                  color: textColor,
+                }}
+              >
+                <ChevronDown size={20} />
+
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </button>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div
-          className="flex items-center gap-2 p-2 rounded-3xl backdrop-blur-2xl shadow-xl border"
-          style={{
-            background: darkMode ? "rgba(18, 18, 20, 0.85)" : "rgba(255, 255, 255, 0.85)",
-            borderColor: border,
-          }}
-        >
-          <input
-            value={text}
-            onChange={handleTyping}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder={replyingTo ? "Type your reply..." : "Write a message..."}
-            className="flex-1 px-4 py-2.5 rounded-2xl outline-none text-xs font-medium placeholder:text-zinc-500 border-none bg-transparent"
-            style={{ color: textColor }}
-          />
+        {/* Input Section, Reply Preview & Attached Note Preview */}
+        <div className="fixed left-0 right-0 max-w-lg mx-auto px-3 z-30 bottom-20">
+          <AnimatePresence>
+            {replyingTo && (
+              <motion.div
+                key="reply-bar"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                className="mb-1.5 p-2 rounded-2xl border flex items-center justify-between backdrop-blur-2xl shadow-md"
+                style={{
+                  background: darkMode ? "rgba(18, 18, 20, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                  borderColor: border,
+                }}
+              >
+                <div className="flex items-center gap-2 overflow-hidden text-xs">
+                  <Reply size={14} className="text-red-500 shrink-0 ml-1" />
+                  <div className="truncate">
+                    <span className="font-bold text-red-500 block text-[10px]">
+                      Replying to {replyingTo.sender}
+                    </span>
+                    <span className="truncate block opacity-80" style={{ color: textColor }}>
+                      {replyingTo.message}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setReplyingTo(null)}
+                  className="p-1 text-zinc-400 hover:text-zinc-200"
+                >
+                  <X size={14} />
+                </button>
+              </motion.div>
+            )}
 
-          <button
-            onClick={sendMessage}
-            disabled={!text.trim()}
-            className="w-10 h-10 rounded-2xl text-white font-bold transition-all active:scale-95 flex items-center justify-center shrink-0 disabled:opacity-40 disabled:scale-100 shadow-md"
-            style={{ background: "linear-gradient(135deg, #dc2626, #991b1b)" }}
+            {attachedNote && (
+              <motion.div
+                key="note-bar"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                className="mb-1.5 p-2 rounded-2xl border flex items-center justify-between backdrop-blur-2xl shadow-md"
+                style={{
+                  background: darkMode ? "rgba(18, 18, 20, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                  borderColor: border,
+                }}
+              >
+                <div className="flex items-center gap-2 overflow-hidden text-xs">
+                  <Paperclip size={14} className="text-red-500 shrink-0 ml-1" />
+                  <div className="truncate">
+                    <span className="font-bold text-red-500 block text-[10px]">
+                      Attaching note
+                    </span>
+                    <span className="truncate block opacity-80" style={{ color: textColor }}>
+                      {attachedNote.title} · {attachedNote.subject}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAttachedNote(null)}
+                  className="p-1 text-zinc-400 hover:text-zinc-200"
+                >
+                  <X size={14} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div
+            className="flex items-center gap-2 p-2 rounded-3xl backdrop-blur-2xl shadow-xl border"
+            style={{
+              background: darkMode ? "rgba(18, 18, 20, 0.85)" : "rgba(255, 255, 255, 0.85)",
+              borderColor: border,
+            }}
           >
-            <Send size={16} />
-          </button>
+            <button
+              onClick={openNotePicker}
+              aria-label="Attach a note"
+              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all active:scale-95"
+              style={{
+                background: attachedNote ? "rgba(239, 68, 68, 0.15)" : "transparent",
+                color: attachedNote ? "#ef4444" : subTextColor,
+              }}
+            >
+              <Paperclip size={18} />
+            </button>
+
+            <input
+              value={text}
+              onChange={handleTyping}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              placeholder={
+                attachedNote
+                  ? "Add a message (optional)..."
+                  : replyingTo
+                  ? "Type your reply..."
+                  : "Write a message..."
+              }
+              className="flex-1 min-w-0 px-2 py-2.5 rounded-2xl outline-none text-xs font-medium placeholder:text-zinc-500 border-none bg-transparent"
+              style={{ color: textColor }}
+            />
+
+            <button
+              onClick={sendMessage}
+              disabled={!text.trim() && !attachedNote}
+              className="w-10 h-10 rounded-2xl text-white font-bold transition-all active:scale-95 flex items-center justify-center shrink-0 disabled:opacity-40 disabled:scale-100 shadow-md"
+              style={{ background: "linear-gradient(135deg, #dc2626, #991b1b)" }}
+            >
+              <Send size={16} />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Note Picker (bottom sheet) */}
+      <AnimatePresence>
+        {showNotePicker && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={closeNotePicker}
+            />
+
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 250 }}
+              className="relative w-full max-w-lg max-h-[75dvh] flex flex-col rounded-t-3xl p-4 backdrop-blur-2xl"
+              style={{
+                background: darkMode ? "rgba(18, 18, 20, 0.97)" : "rgba(255, 255, 255, 0.97)",
+                border: `1px solid ${border}`,
+                color: textColor,
+              }}
+            >
+              <div className="w-10 h-1 bg-zinc-500/30 rounded-full mx-auto mb-3 shrink-0" />
+
+              <div className="flex items-center justify-between mb-3 shrink-0">
+                <div>
+                  <h3 className="text-sm font-bold">Attach a note</h3>
+                  <p className="text-[10px] font-medium" style={{ color: subTextColor }}>
+                    Notes from your class
+                  </p>
+                </div>
+                <button
+                  onClick={closeNotePicker}
+                  className="p-1.5 rounded-full hover:bg-zinc-500/10 transition"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Search */}
+              <div className="relative flex items-center mb-3 shrink-0">
+                <Search size={14} className="absolute left-3.5 text-zinc-400" />
+                <input
+                  value={noteSearch}
+                  onChange={(e) => setNoteSearch(e.target.value)}
+                  placeholder="Search by title or subject..."
+                  className="w-full pl-9 pr-4 py-2.5 rounded-2xl outline-none text-xs font-medium border placeholder:text-zinc-500"
+                  style={{ background: inputBg, color: textColor, borderColor: border }}
+                />
+              </div>
+
+              {/* List */}
+              <div className="flex-1 overflow-y-auto overscroll-contain space-y-2 pb-2">
+                {notesLoading && pickerNotes.length === 0 && (
+                  <div className="flex justify-center py-10">
+                    <Loader2 size={20} className="animate-spin text-red-500" />
+                  </div>
+                )}
+
+                {!notesLoading && pickerNotes.length === 0 && (
+                  <p
+                    className="text-center text-xs font-medium py-10"
+                    style={{ color: subTextColor }}
+                  >
+                    {noteSearch ? `No notes matched "${noteSearch}"` : "No notes uploaded yet"}
+                  </p>
+                )}
+
+                {pickerNotes.map((note) => {
+                  const accent = getSubjectAccent(note.subject);
+                  const badge = getFileBadge(note.file_type);
+
+                  return (
+                    <button
+                      key={note.id}
+                      onClick={() => pickNote(note)}
+                      className="w-full text-left flex items-center gap-3 p-3 rounded-2xl border active:scale-[0.98] transition-transform"
+                      style={{
+                        background: inputBg,
+                        borderColor: border,
+                        borderLeft: `3px solid ${accent}`,
+                      }}
+                    >
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: `${accent}22`, color: accent }}
+                      >
+                        <badge.Icon size={16} />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold truncate">{note.title}</p>
+                        <p
+                          className="text-[10px] font-medium mt-0.5 truncate"
+                          style={{ color: subTextColor }}
+                        >
+                          {note.subject} · {note.category}
+                        </p>
+                      </div>
+
+                      <span
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0"
+                        style={{
+                          color: subTextColor,
+                          background: darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+                        }}
+                      >
+                        {badge.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <MobileNavbar
         darkMode={darkMode}

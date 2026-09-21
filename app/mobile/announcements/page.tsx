@@ -154,13 +154,7 @@ export default function MobileAnnouncementsPage() {
           style={{ background: sidebarBg, borderColor: "#3f0000" }}
         >
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-sm"
-              style={{ background: "#8b0000" }}
-            >
-              N
-            </div>
-            <span className="font-extrabold text-base tracking-tight">TreX</span>
+            <span className="font-extrabold text-base tracking-tight">TreX Edu</span>
           </div>
         </div>
 

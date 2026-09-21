@@ -23,6 +23,7 @@ import {
   Settings,
   Megaphone,
   User,
+  Loader2,
 } from "lucide-react";
 import MobileNavbar from "@/components/MobileNavbar";
 
@@ -199,12 +200,13 @@ export default function MobileProfilePage() {
       {/* Main column */}
       <div className="flex-1 min-w-0">
         {loading && (
-          <div className="loading-screen">
-            <img src="/toggle-icon.png" className="loading-x" alt="loading" />
-            <div className="loading-text">Loading Profile</div>
+          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-md bg-black/60">
+            <Loader2 className="w-8 h-8 text-red-500 animate-spin mb-2" />
+            <p className="text-xs font-semibold tracking-wide text-zinc-300">
+              Loading your profile...
+            </p>
           </div>
         )}
-
         {/* Mobile top bar */}
         <div
           className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b backdrop-blur-xl"
