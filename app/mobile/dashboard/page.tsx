@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../src/lib/supabase";
 import useAuth from "../../../src/hooks/useAuth";
 import { useTheme } from "../../../src/context/ThemeContext";
+import { useCountUp } from "../../../src/hooks/useCountUp";
 import {
   Megaphone,
   FileText,
@@ -49,6 +50,22 @@ type Exam = {
   topics: string[];
 };
 
+const NAV_ITEMS = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/mobile/dashboard" },
+  { label: "Materials", icon: BookOpen, href: "/mobile/feed" },
+  { label: "Announcements", icon: Megaphone, href: "/mobile/announcements" },
+  { label: "Profile", icon: User, href: "/mobile/profile" },
+];
+
+const SUBJECTS = [
+  "Physics",
+  "Chemistry",
+  "Mathematics",
+  "Computer Science",
+  "English",
+  "Physical Education",
+];
+
 // Distinct accent color per subject — reused for icons, spines and badges
 function getSubjectAccent(subject: string) {
   const map: Record<string, string> = {
@@ -73,6 +90,7 @@ function getInitials(name?: string) {
 export default function DesktopThemeDashboardPage() {
   const { session, loading } = useAuth();
   const { darkMode } = useTheme();
+  const pathname = usePathname();
 
   const [notesCount, setNotesCount] = useState(0);
   const [xp, setXp] = useState(0);
@@ -82,9 +100,15 @@ export default function DesktopThemeDashboardPage() {
   const [deleteTarget, setDeleteTarget] = useState<Note | null>(null);
   const [fullName, setFullName] = useState("");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [statsReady, setStatsReady] = useState(false); // true once stats are fetched
 
   // Toggle State: 'notes' or 'exams'
   const [activeTab, setActiveTab] = useState<"notes" | "exams">("notes");
+
+  // Count-up numbers (start only after the real data has arrived)
+  const animatedNotes = useCountUp(notesCount, statsReady);
+  const animatedXp = useCountUp(xp, statsReady);
+  const animatedLikes = useCountUp(totalLikes, statsReady);
 
   // Sample Upcoming Exams Data (Replace or Sync with Supabase)
   const [upcomingExams] = useState<Exam[]>([
@@ -95,15 +119,15 @@ export default function DesktopThemeDashboardPage() {
       date: "Sep 21, 2026",
       time: "8:15 AM - 11:15 PM",
       topics: [
-          "Electric Charges and Fields",
-          "Electrostatic Potential and Capacitance",
-          "Current Electricity",
-          "Moving Charges and Magnetism",
-          "Magnetism and Matter",
-          "Electromagnetic Induction",
-          "Alternating Current",
-          "Ray Optics (till Lenses)"
-        ],
+        "Electric Charges and Fields",
+        "Electrostatic Potential and Capacitance",
+        "Current Electricity",
+        "Moving Charges and Magnetism",
+        "Magnetism and Matter",
+        "Electromagnetic Induction",
+        "Alternating Current",
+        "Ray Optics (till Lenses)",
+      ],
     },
     {
       id: "2",
@@ -123,7 +147,7 @@ export default function DesktopThemeDashboardPage() {
         "The Third Level",
         "The Tiger King",
         "Journey to the End of the Earth",
-        "The Enemy"
+        "The Enemy",
       ],
     },
     {
@@ -134,15 +158,15 @@ export default function DesktopThemeDashboardPage() {
       time: "8:15 AM - 11:15 PM",
       topics: ["Python (class notes)", "SQL (class notes)", "RDBMS (class notes)"],
     },
-      {
+    {
       id: "4",
       title: "Mid-Term Physical Education Exam",
       subject: "Physical Education",
       date: "Sep 28, 2026",
       time: "8:15 AM - 11:15 PM",
-      topics: ["Chapter 1-6",],
+      topics: ["Chapter 1-6"],
     },
-      {
+    {
       id: "5",
       title: "Mid-Term Mathematics Exam",
       subject: "Mathematics",
@@ -155,10 +179,10 @@ export default function DesktopThemeDashboardPage() {
         "Determinants",
         "Continuity and Differentiability",
         "Application of Derivatives",
-        "Integrals"
+        "Integrals",
       ],
     },
-      {
+    {
       id: "6",
       title: "Mid-Term Chemistry Exam",
       subject: "Chemistry",
@@ -175,14 +199,7 @@ export default function DesktopThemeDashboardPage() {
     },
   ]);
 
-  const subjects = [
-    "Physics",
-    "Chemistry",
-    "Mathematics",
-    "Computer Science",
-    "English",
-    "Physical Education",
-  ];
+  /* ───────────── Theme classes ───────────── */
 
   const bgClass = darkMode
     ? "bg-[#09090b] text-zinc-100"
@@ -202,6 +219,66 @@ export default function DesktopThemeDashboardPage() {
 
   const subTextClass = darkMode ? "text-zinc-400" : "text-zinc-500";
 
+  // Dividers and inner surfaces
+  const dividerClass = darkMode ? "border-zinc-800/40" : "border-zinc-200";
+  const innerBgClass = darkMode ? "bg-zinc-950/20" : "bg-zinc-50/80";
+  const hoverRowClass = darkMode ? "hover:bg-zinc-800/20" : "hover:bg-zinc-100/70";
+  const pillBorderClass = darkMode ? "border-zinc-700/50" : "border-zinc-300";
+
+  // Sidebar + toggle
+  const navIdleClass = darkMode
+    ? `${subTextClass} hover:bg-zinc-800/40 hover:text-zinc-200`
+    : `${subTextClass} hover:bg-zinc-100 hover:text-zinc-900`;
+  const iconBtnHoverClass = darkMode ? "hover:bg-zinc-800/50" : "hover:bg-zinc-100";
+  const toggleWrapClass = darkMode
+    ? "border-zinc-800 bg-zinc-950/60"
+    : "border-zinc-200 bg-zinc-100";
+  const toggleIdleClass = darkMode
+    ? `${subTextClass} hover:text-zinc-200`
+    : `${subTextClass} hover:text-zinc-900`;
+
+  // Note rows
+  const noteRowClass = darkMode
+    ? "border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700"
+    : "border-zinc-200 bg-white hover:border-zinc-300";
+  const viewBtnClass = darkMode
+    ? "bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
+    : "bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200";
+  const trashBtnClass = darkMode
+    ? "text-zinc-400 hover:text-red-400 hover:bg-red-500/10"
+    : "text-zinc-500 hover:text-red-600 hover:bg-red-50";
+
+  // Exam chips
+  const chipClass = darkMode
+    ? "bg-zinc-800/80 text-zinc-300 border-zinc-700/50"
+    : "bg-zinc-100 text-zinc-700 border-zinc-200";
+  const cardHoverBorderClass = darkMode ? "hover:border-zinc-700" : "hover:border-zinc-300";
+
+  // Leaderboard
+  const lbRowClass = darkMode
+    ? "border-zinc-800/40 bg-zinc-900/30 hover:border-zinc-700/60"
+    : "border-zinc-200 bg-zinc-50 hover:border-zinc-300";
+  const lbAvatarClass = darkMode
+    ? "from-zinc-700 to-zinc-800 text-zinc-200"
+    : "from-zinc-200 to-zinc-300 text-zinc-700";
+
+  // Accent text (400 shades are too pale on white)
+  const amberText = darkMode ? "text-amber-400" : "text-amber-600";
+  const redText = darkMode ? "text-red-400" : "text-red-600";
+
+  // Delete modal
+  const modalClass = darkMode
+    ? "border-zinc-800 bg-zinc-900 text-zinc-100"
+    : "border-zinc-200 bg-white text-zinc-900";
+  const modalInnerClass = darkMode
+    ? "border-zinc-800 bg-zinc-950/60"
+    : "border-zinc-200 bg-zinc-50";
+  const modalCancelClass = darkMode
+    ? "border-zinc-700 bg-zinc-800 hover:bg-zinc-700"
+    : "border-zinc-200 bg-zinc-100 hover:bg-zinc-200";
+
+  /* ───────────── Data ───────────── */
+
   useEffect(() => {
     if (!loading && session) {
       fetchStats();
@@ -212,40 +289,17 @@ export default function DesktopThemeDashboardPage() {
   useEffect(() => {
     if (!session) return;
 
+    const refresh = async () => {
+      await fetchStats();
+      await fetchLeaderboard();
+    };
+
     const channel = supabase
       .channel("desktop-dashboard-realtime")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notes" },
-        async () => {
-          await fetchStats();
-          await fetchLeaderboard();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "notes" },
-        async () => {
-          await fetchStats();
-          await fetchLeaderboard();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "notes" },
-        async () => {
-          await fetchStats();
-          await fetchLeaderboard();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles" },
-        async () => {
-          await fetchStats();
-          await fetchLeaderboard();
-        }
-      )
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notes" }, refresh)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notes" }, refresh)
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "notes" }, refresh)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, refresh)
       .subscribe();
 
     return () => {
@@ -273,6 +327,8 @@ export default function DesktopThemeDashboardPage() {
 
     setXp(profileData?.xp || 0);
     setFullName((profileData?.full_name || "").split(" ")[0]);
+
+    setStatsReady(true); // real numbers are in → count-up can start
   }
 
   async function fetchLeaderboard() {
@@ -350,23 +406,31 @@ export default function DesktopThemeDashboardPage() {
   const statCards = [
     {
       label: "Uploaded Notes",
-      value: notesCount,
+      value: animatedNotes,
       icon: FileText,
-      color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+      color: darkMode
+        ? "text-blue-400 bg-blue-500/10 border-blue-500/20"
+        : "text-blue-600 bg-blue-500/10 border-blue-500/25",
     },
     {
       label: "Total XP",
-      value: xp,
+      value: animatedXp,
       icon: Zap,
-      color: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+      color: darkMode
+        ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
+        : "text-amber-600 bg-amber-500/10 border-amber-500/25",
     },
     {
       label: "Total Likes",
-      value: totalLikes,
+      value: animatedLikes,
       icon: Heart,
-      color: "text-red-400 bg-red-500/10 border-red-500/20",
+      color: darkMode
+        ? "text-red-400 bg-red-500/10 border-red-500/20"
+        : "text-red-600 bg-red-500/10 border-red-500/25",
     },
   ];
+
+  /* ───────────── UI ───────────── */
 
   return (
     <div className={`min-h-screen flex ${bgClass}`}>
@@ -380,13 +444,7 @@ export default function DesktopThemeDashboardPage() {
           </div>
 
           <nav className="space-y-1">
-            {[
-              { label: "Dashboard", icon: LayoutDashboard, href: "/mobile/dashboard" },
-              { label: "Materials", icon: BookOpen, href: "/mobile/feed" },
-              { label: "Announcements", icon: Megaphone, href: "/mobile/announcements" },
-              { label: "Profile", icon: User, href: "/mobile/profile" },
-            ].map((item) => {
-              const pathname = usePathname();
+            {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -397,7 +455,7 @@ export default function DesktopThemeDashboardPage() {
                       ? darkMode
                         ? "bg-red-500/10 text-red-400 border border-red-500/20"
                         : "bg-red-50 text-red-600 border border-red-200"
-                      : `${subTextClass} hover:bg-zinc-800/40 hover:text-zinc-200`
+                      : navIdleClass
                   }`}
                 >
                   <item.icon size={16} />
@@ -408,7 +466,7 @@ export default function DesktopThemeDashboardPage() {
           </nav>
         </div>
 
-        <div className="border-t border-zinc-800/60 pt-4 px-2 flex items-center justify-between">
+        <div className={`border-t pt-4 px-2 flex items-center justify-between ${dividerClass}`}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center font-bold text-xs text-white">
               {getInitials(fullName)}
@@ -418,7 +476,7 @@ export default function DesktopThemeDashboardPage() {
               <p className={`text-[10px] mt-0.5 ${subTextClass}`}>Student</p>
             </div>
           </div>
-          <button className={`p-2 rounded-lg hover:bg-zinc-800/50 ${subTextClass}`}>
+          <button className={`p-2 rounded-lg ${iconBtnHoverClass} ${subTextClass}`}>
             <Settings size={15} />
           </button>
         </div>
@@ -431,7 +489,11 @@ export default function DesktopThemeDashboardPage() {
           className={`md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b ${mobileTopBarClass}`}
         >
           <div className="flex items-center gap-2.5">
-            <span className="font-extrabold text-base tracking-tight">TreX Edu</span>
+            <img
+              src={darkMode ? "/toogle-trex.png" : "/trex-dark.png"}
+              alt="TreX Edu"
+              className="h-10 w-auto object-contain"
+            />
           </div>
 
           <div className="flex items-center gap-2">
@@ -441,7 +503,6 @@ export default function DesktopThemeDashboardPage() {
               <Bell size={15} className={subTextClass} />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
             </button>
-
           </div>
         </div>
 
@@ -455,11 +516,11 @@ export default function DesktopThemeDashboardPage() {
         ) : (
           <main className="max-w-7xl w-full mx-auto p-4 md:p-8 space-y-6 md:space-y-8 pb-28 md:pb-8">
             {/* Header Bar */}
-            <header className="hidden md:flex flex-row items-center justify-between gap-4 border-b border-zinc-800/40 pb-6">
+            <header
+              className={`hidden md:flex flex-row items-center justify-between gap-4 border-b pb-6 ${dividerClass}`}
+            >
               <div>
-                <p
-                  className={`text-xs font-medium uppercase tracking-wider ${subTextClass}`}
-                >
+                <p className={`text-xs font-medium uppercase tracking-wider ${subTextClass}`}>
                   Overview
                 </p>
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight mt-1">
@@ -469,7 +530,7 @@ export default function DesktopThemeDashboardPage() {
 
               <div className="flex items-center gap-3">
                 <button
-                  className={`p-2.5 rounded-xl border transition-all ${cardBgClass} hover:border-zinc-700`}
+                  className={`p-2.5 rounded-xl border transition-all ${cardBgClass} ${cardHoverBorderClass}`}
                 >
                   <Bell size={16} className={subTextClass} />
                 </button>
@@ -501,16 +562,20 @@ export default function DesktopThemeDashboardPage() {
 
               <div className="flex items-center gap-2 mt-4">
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                  <Zap size={13} className="text-amber-400" />
-                  <span className="text-xs font-bold text-amber-400">{xp} XP</span>
+                  <Zap size={13} className={amberText} />
+                  <span className={`text-xs font-bold tabular-nums ${amberText}`}>
+                    {animatedXp} XP
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
-                  <Heart size={13} className="text-red-400" />
-                  <span className="text-xs font-bold text-red-400">{totalLikes} Likes</span>
+                  <Heart size={13} className={redText} />
+                  <span className={`text-xs font-bold tabular-nums ${redText}`}>
+                    {animatedLikes} Likes
+                  </span>
                 </div>
               </div>
-
               <a
+              
                 href="/mobile/announcements"
                 className="mt-4 flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-xs font-semibold bg-red-600 text-white active:scale-[0.98] transition-all shadow-md shadow-red-900/20"
               >
@@ -541,7 +606,7 @@ export default function DesktopThemeDashboardPage() {
                           <stat.icon size={16} className="hidden md:block" />
                         </div>
                       </div>
-                      <p className="text-2xl md:text-3xl font-extrabold mt-2 md:mt-3">
+                      <p className="text-2xl md:text-3xl font-extrabold mt-2 md:mt-3 tabular-nums">
                         {stat.value}
                       </p>
                     </div>
@@ -556,13 +621,15 @@ export default function DesktopThemeDashboardPage() {
                     </h2>
 
                     {/* Toggle Switch — full width on mobile */}
-                    <div className="flex sm:inline-flex p-1 rounded-xl border border-zinc-800 bg-zinc-950/60 self-stretch sm:self-auto">
+                    <div
+                      className={`flex sm:inline-flex p-1 rounded-xl border self-stretch sm:self-auto ${toggleWrapClass}`}
+                    >
                       <button
                         onClick={() => setActiveTab("notes")}
                         className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                           activeTab === "notes"
                             ? "bg-red-600 text-white shadow-sm"
-                            : `${subTextClass} hover:text-zinc-200`
+                            : toggleIdleClass
                         }`}
                       >
                         <FileText size={14} />
@@ -574,7 +641,7 @@ export default function DesktopThemeDashboardPage() {
                         className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                           activeTab === "exams"
                             ? "bg-red-600 text-white shadow-sm"
-                            : `${subTextClass} hover:text-zinc-200`
+                            : toggleIdleClass
                         }`}
                       >
                         <Calendar size={14} />
@@ -586,10 +653,8 @@ export default function DesktopThemeDashboardPage() {
                   {/* TAB 1: MY NOTES VIEW */}
                   {activeTab === "notes" && (
                     <div className="space-y-3">
-                      {subjects.map((subject) => {
-                        const subjectNotes = notes.filter(
-                          (n) => n.subject === subject
-                        );
+                      {SUBJECTS.map((subject) => {
+                        const subjectNotes = notes.filter((n) => n.subject === subject);
 
                         if (subjectNotes.length === 0) return null;
 
@@ -606,29 +671,22 @@ export default function DesktopThemeDashboardPage() {
                               style={{ background: accent }}
                             />
                             <button
-                              onClick={() =>
-                                setOpenSubject(isOpen ? null : subject)
-                              }
-                              className="w-full flex items-center justify-between p-4 pl-5 hover:bg-zinc-800/20 transition-colors text-left"
+                              onClick={() => setOpenSubject(isOpen ? null : subject)}
+                              className={`w-full flex items-center justify-between p-4 pl-5 transition-colors text-left ${hoverRowClass}`}
                             >
                               <div className="flex items-center gap-3">
                                 <div
                                   className="p-2 rounded-lg"
-                                  style={{
-                                    background: `${accent}1a`,
-                                    color: accent,
-                                  }}
+                                  style={{ background: `${accent}1a`, color: accent }}
                                 >
                                   <FileText size={16} />
                                 </div>
-                                <span className="text-sm font-semibold">
-                                  {subject}
-                                </span>
+                                <span className="text-sm font-semibold">{subject}</span>
                               </div>
 
                               <div className="flex items-center gap-3">
                                 <span
-                                  className={`text-xs px-2.5 py-0.5 rounded-full font-medium border border-zinc-700/50 ${subTextClass}`}
+                                  className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${pillBorderClass} ${subTextClass}`}
                                 >
                                   {subjectNotes.length}{" "}
                                   {subjectNotes.length === 1 ? "File" : "Files"}
@@ -636,21 +694,18 @@ export default function DesktopThemeDashboardPage() {
                                 {isOpen ? (
                                   <ChevronUp size={16} className={subTextClass} />
                                 ) : (
-                                  <ChevronDown
-                                    size={16}
-                                    className={subTextClass}
-                                  />
+                                  <ChevronDown size={16} className={subTextClass} />
                                 )}
                               </div>
                             </button>
 
                             {isOpen && (
-                              <div className="p-4 border-t border-zinc-800/40 bg-zinc-950/20">
+                              <div className={`p-4 border-t ${dividerClass} ${innerBgClass}`}>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   {subjectNotes.map((note) => (
                                     <div
                                       key={note.id}
-                                      className="p-3.5 rounded-xl border border-zinc-800/60 bg-zinc-900/40 hover:border-zinc-700 flex items-center justify-between gap-3 transition-all"
+                                      className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-all ${noteRowClass}`}
                                     >
                                       <div className="min-w-0 flex-1">
                                         <p className="font-semibold text-xs truncate">
@@ -672,7 +727,7 @@ export default function DesktopThemeDashboardPage() {
                                           href={note.file_url}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 flex items-center gap-1 transition-colors"
+                                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${viewBtnClass}`}
                                         >
                                           <span>View</span>
                                           <ExternalLink size={12} />
@@ -680,7 +735,7 @@ export default function DesktopThemeDashboardPage() {
 
                                         <button
                                           onClick={() => setDeleteTarget(note)}
-                                          className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                          className={`p-1.5 rounded-lg transition-colors ${trashBtnClass}`}
                                         >
                                           <Trash2 size={14} />
                                         </button>
@@ -704,7 +759,7 @@ export default function DesktopThemeDashboardPage() {
                         return (
                           <div
                             key={exam.id}
-                            className={`p-5 rounded-2xl border space-y-4 relative overflow-hidden ${cardBgClass} hover:border-zinc-700 transition-all`}
+                            className={`p-5 rounded-2xl border space-y-4 relative overflow-hidden transition-all ${cardBgClass} ${cardHoverBorderClass}`}
                           >
                             <div
                               className="absolute inset-y-0 left-0 w-[3px]"
@@ -722,9 +777,7 @@ export default function DesktopThemeDashboardPage() {
                                 >
                                   {exam.subject}
                                 </span>
-                                <h3 className="font-bold text-sm mt-2">
-                                  {exam.title}
-                                </h3>
+                                <h3 className="font-bold text-sm mt-2">{exam.title}</h3>
                               </div>
                               <div
                                 className="p-2 rounded-xl shrink-0"
@@ -736,16 +789,16 @@ export default function DesktopThemeDashboardPage() {
 
                             <div className="space-y-1.5 text-xs pl-1.5">
                               <div className={`flex items-center gap-2 ${subTextClass}`}>
-                                <Calendar size={13} className="text-red-400" />
+                                <Calendar size={13} className={redText} />
                                 <span>{exam.date}</span>
                               </div>
                               <div className={`flex items-center gap-2 ${subTextClass}`}>
-                                <Clock size={13} className="text-amber-400" />
+                                <Clock size={13} className={amberText} />
                                 <span>{exam.time}</span>
                               </div>
                             </div>
 
-                            <div className="border-t border-zinc-800/40 pt-3 pl-1.5">
+                            <div className={`border-t pt-3 pl-1.5 ${dividerClass}`}>
                               <p className={`text-[11px] font-semibold mb-1.5 ${subTextClass}`}>
                                 Topics Included:
                               </p>
@@ -753,7 +806,7 @@ export default function DesktopThemeDashboardPage() {
                                 {exam.topics.map((topic, i) => (
                                   <span
                                     key={i}
-                                    className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-800/80 text-zinc-300 border border-zinc-700/50"
+                                    className={`text-[10px] font-medium px-2 py-0.5 rounded-md border ${chipClass}`}
                                   >
                                     {topic}
                                   </span>
@@ -773,9 +826,9 @@ export default function DesktopThemeDashboardPage() {
                 <div
                   className={`p-5 rounded-2xl border lg:sticky lg:top-8 space-y-4 ${cardBgClass}`}
                 >
-                  <div className="flex items-center justify-between border-b border-zinc-800/40 pb-3">
+                  <div className={`flex items-center justify-between border-b pb-3 ${dividerClass}`}>
                     <div className="flex items-center gap-2">
-                      <Trophy size={18} className="text-amber-400" />
+                      <Trophy size={18} className={amberText} />
                       <h2 className="text-base font-bold">Class Leaderboard</h2>
                     </div>
                   </div>
@@ -787,26 +840,28 @@ export default function DesktopThemeDashboardPage() {
                         <div
                           key={index}
                           className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
-                            isTop
-                              ? "border-amber-500/30 bg-amber-500/5"
-                              : "border-zinc-800/40 bg-zinc-900/30 hover:border-zinc-700/60"
+                            isTop ? "border-amber-500/30 bg-amber-500/5" : lbRowClass
                           }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <span
                               className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black shrink-0 ${
                                 index === 0
-                                  ? "bg-amber-500/15 text-amber-400"
+                                  ? `bg-amber-500/15 ${amberText}`
                                   : index === 1
-                                  ? "bg-zinc-500/15 text-zinc-300"
+                                  ? darkMode
+                                    ? "bg-zinc-500/15 text-zinc-300"
+                                    : "bg-zinc-300/50 text-zinc-600"
                                   : index === 2
                                   ? "bg-amber-800/20 text-amber-600"
-                                  : `bg-zinc-800/40 ${subTextClass}`
+                                  : `${darkMode ? "bg-zinc-800/40" : "bg-zinc-200/70"} ${subTextClass}`
                               }`}
                             >
                               {index + 1}
                             </span>
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-200 shrink-0">
+                            <div
+                              className={`w-7 h-7 rounded-full bg-gradient-to-br flex items-center justify-center text-[10px] font-bold shrink-0 ${lbAvatarClass}`}
+                            >
                               {getInitials(user.full_name)}
                             </div>
                             <span className="text-xs font-semibold truncate">
@@ -814,7 +869,9 @@ export default function DesktopThemeDashboardPage() {
                             </span>
                           </div>
 
-                          <span className="flex items-center gap-1 text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                          <span
+                            className={`flex items-center gap-1 text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 shrink-0 ${amberText}`}
+                          >
                             {isTop && <Flame size={11} />}
                             {user.xp} XP
                           </span>
@@ -847,7 +904,9 @@ export default function DesktopThemeDashboardPage() {
       {/* Delete Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="p-6 rounded-2xl w-full max-w-sm border border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl space-y-4 text-center">
+          <div
+            className={`p-6 rounded-2xl w-full max-w-sm border shadow-2xl space-y-4 text-center ${modalClass}`}
+          >
             <div className="w-10 h-10 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full flex items-center justify-center mx-auto">
               <Trash2 size={20} />
             </div>
@@ -859,14 +918,16 @@ export default function DesktopThemeDashboardPage() {
               </p>
             </div>
 
-            <div className="p-3 rounded-xl border border-zinc-800 bg-zinc-950/60 text-xs font-medium truncate">
+            <div
+              className={`p-3 rounded-xl border text-xs font-medium truncate ${modalInnerClass}`}
+            >
               "{deleteTarget.title}"
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-2 rounded-xl border border-zinc-700 bg-zinc-800 text-xs font-semibold hover:bg-zinc-700 transition-colors"
+                className={`flex-1 py-2 rounded-xl border text-xs font-semibold transition-colors ${modalCancelClass}`}
               >
                 Cancel
               </button>

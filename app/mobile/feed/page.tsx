@@ -438,7 +438,7 @@ export default function MobileFeedPage() {
           style={{ background: sidebarBg, borderColor: border }}
         >
           <div className="flex items-center gap-2.5">
-            <span className="font-extrabold text-base tracking-tight">TreX Edu</span>
+            <img src={darkMode ? "/toogle-trex.png" : "/trex-dark.png"} alt="TreX Edu" className="h-10 w-auto object-contain" />
           </div>
 
           <button

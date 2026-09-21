@@ -11,6 +11,7 @@ import {
   Loader2,
   Sparkles,
   X,
+  Bell,
 } from "lucide-react";
 import MobileNavbar from "@/components/MobileNavbar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -148,6 +149,31 @@ export default function MobileUploadPage() {
       className="min-h-screen w-full transition-colors duration-300"
       style={{ background: bg, color: textColor }}
     >
+      {/* Top bar (same as dashboard) */}
+      <div
+        className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b backdrop-blur-xl"
+        style={{
+          background: darkMode ? "rgba(9, 9, 11, 0.8)" : "rgba(255, 255, 255, 0.8)",
+          borderColor: border,
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          <img
+            src={darkMode ? "/toogle-trex.png" : "/trex-dark.png"}
+            alt="TreX Edu"
+            className="h-10 w-auto object-contain"
+          />
+        </div>
+
+        <button
+          className="relative p-2 rounded-full border transition-all"
+          style={{ borderColor: border, background: cardBg }}
+        >
+          <Bell size={15} style={{ color: subTextColor }} />
+          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
+        </button>
+      </div>
+
       {/* Inner column: centered, max width */}
       <div className="relative w-full max-w-lg mx-auto px-4 pt-6 pb-28">
         {/* Loading Overlay */}
@@ -159,6 +185,7 @@ export default function MobileUploadPage() {
             </p>
           </div>
         )}
+        
 
         {/* Upload Progress Modal */}
         <AnimatePresence>
