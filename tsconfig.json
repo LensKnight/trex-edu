@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "components/Sidebar.jsx", "components/Sidebar.jsx"  ],
+, "components/Sidebar.jsx", "components/Sidebar.jsx", "app/api/send-push/route.js", "app/api/send-push/route.js"  ],
   "exclude": ["node_modules"]
 }
