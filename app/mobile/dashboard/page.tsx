@@ -114,10 +114,10 @@ export default function DesktopThemeDashboardPage() {
   const [upcomingExams] = useState<Exam[]>([
     {
       id: "1",
-      title: "Mid-Term Physics Exam",
+      title: "PRE-BOARD Physics Exam",
       subject: "Physics",
-      date: "Sep 21, 2026",
-      time: "8:15 AM - 11:15 PM",
+      date: "N/A",
+      time: "N/A",
       topics: [
         "Electric Charges and Fields",
         "Electrostatic Potential and Capacitance",
@@ -131,10 +131,10 @@ export default function DesktopThemeDashboardPage() {
     },
     {
       id: "2",
-      title: "Mid-Term English Exam",
+      title: "PRE-BOARD English Exam",
       subject: "English",
-      date: "Sep 23, 2026",
-      time: "8:15 AM - 11:15 AM",
+      date: "N/A",
+      time: "N/A",
       topics: [
         "The Last Lesson",
         "Lost Spring",
@@ -152,26 +152,26 @@ export default function DesktopThemeDashboardPage() {
     },
     {
       id: "3",
-      title: "Mid-Term Computer Science Exam",
+      title: "PRE-BOARD Computer Science Exam",
       subject: "Computer Science",
-      date: "Sep 25, 2026",
-      time: "8:15 AM - 11:15 PM",
+      date: "N/A",
+      time: "N/A",
       topics: ["Python (class notes)", "SQL (class notes)", "RDBMS (class notes)"],
     },
     {
       id: "4",
-      title: "Mid-Term Physical Education Exam",
+      title: "PRE-BOARD Physical Education Exam",
       subject: "Physical Education",
-      date: "Sep 28, 2026",
-      time: "8:15 AM - 11:15 PM",
+      date: "N/A",
+      time: "N/A",
       topics: ["Chapter 1-6"],
     },
     {
       id: "5",
-      title: "Mid-Term Mathematics Exam",
+      title: "PRE-BOARD Mathematics Exam",
       subject: "Mathematics",
-      date: "Sep 30, 2026",
-      time: "8:15 AM - 11:15 PM",
+      date: "N/A",
+      time: "N/A",
       topics: [
         "Relations and Functions",
         "Inverse Trigonometric Functions",
@@ -184,10 +184,10 @@ export default function DesktopThemeDashboardPage() {
     },
     {
       id: "6",
-      title: "Mid-Term Chemistry Exam",
+      title: "PRE-BOARD Chemistry Exam",
       subject: "Chemistry",
-      date: "Oct 05, 2026",
-      time: "8:15 AM - 11:15 PM",
+      date: "N/A",
+      time: "N/A",
       topics: [
         "Solutions",
         "Electrochemistry",

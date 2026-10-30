@@ -71,12 +71,12 @@ export default function DashboardPage() {
 
   // Updated Exam Routine Schedule
   const examRoutine: RoutineItem[] = [
-    { subject: "Physics", date: "21 Sep 2026", time: "8:15 AM - 11:15 PM", room: "N/A" },
-    { subject: "English", date: "23 Sep 2026", time: "8:15 AM - 11:15 PM", room: "N/A" },
-    { subject: "Computer Science / Biology", date: "25 Sep 2026", time: "8:15 AM - 11:15 PM", room: "N/A" },
-    { subject: "Physical Education", date: "28 Sep 2026", time: "8:15 AM - 11:15 PM", room: "N/A" },
-    { subject: "Mathematics", date: "30 Sep 2026", time: "8:15 AM - 11:15 PM", room: "N/A" },
-    { subject: "Chemistry", date: "05 Oct 2026", time: "8:15 AM - 11:15 PM", room: "N/A" },
+    { subject: "Physics", date: "N/A", time: "8:15 AM - 11:15 PM", room: "N/A" },
+    { subject: "English", date: "N/A", time: "8:15 AM - 11:15 PM", room: "N/A" },
+    { subject: "Computer Science / Biology", date: "N/A", time: "8:15 AM - 11:15 PM", room: "N/A" },
+    { subject: "Physical Education", date: "N/A", time: "8:15 AM - 11:15 PM", room: "N/A" },
+    { subject: "Mathematics", date: "N/A", time: "8:15 AM - 11:15 PM", room: "N/A" },
+    { subject: "Chemistry", date: "N/A", time: "8:15 AM - 11:15 PM", room: "N/A" },
   ];
 
   const subjects = [
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-500 border border-red-500/30 mb-1">
                         Upcoming Schedule
                       </div>
-                      <h3 className="text-lg font-black tracking-tight">Mid-Term Board Exam</h3>
+                      <h3 className="text-lg font-black tracking-tight">PRE-BOARD Exam</h3>
                     </div>
                   </div>
 
@@ -362,7 +362,7 @@ export default function DashboardPage() {
                     <Calendar className="w-4 h-4 text-red-500" />
                     <div>
                       <p className={`text-[10px] uppercase font-semibold ${subTextColor}`}>Next Paper</p>
-                      <p className="text-xs font-bold">Physics (21 Sep)</p>
+                      <p className="text-xs font-bold">Not Declared</p>
                     </div>
                   </div>
 
@@ -370,7 +370,7 @@ export default function DashboardPage() {
                     <Clock className="w-4 h-4 text-amber-500" />
                     <div>
                       <p className={`text-[10px] uppercase font-semibold ${subTextColor}`}>Timing</p>
-                      <p className="text-xs font-bold">10:00 AM - 1:00 PM</p>
+                      <p className="text-xs font-bold">N/A</p>
                     </div>
                   </div>
                 </div>
@@ -628,7 +628,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold">Exam Routine & Datesheet</h3>
-                  <p className={`text-xs ${subTextColor}`}>Mid-Term Examination 2026</p>
+                  <p className={`text-xs ${subTextColor}`}>PRE-BOARD Examination 2026</p>
                 </div>
               </div>
 
