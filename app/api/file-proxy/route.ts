@@ -55,12 +55,25 @@ export async function GET(req: Request) {
     }
 
     const headers = new Headers();
+    headers.set("Access-Control-Allow-Origin", "https://trexview.vercel.app");
+    headers.set("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges, Content-Type");
+
+    const ext = searchParams.get("ext")?.toLowerCase();
+
+    const mimeTypes: Record<string, string> = {
+      pdf: "application/pdf",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      webp: "image/webp",
+      gif: "image/gif",
+      bmp: "image/bmp",
+    };
 
     headers.set(
       "Content-Type",
-      upstream.headers.get("content-type") || "application/octet-stream"
+      mimeTypes[ext || ""] || "application/octet-stream"
     );
-
     headers.set("Content-Disposition", "inline");
     headers.set("Cache-Control", "private, no-store");
     headers.set(
@@ -85,4 +98,16 @@ export async function GET(req: Request) {
       status: 500,
     });
   }
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "https://trexview.vercel.app",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Range, Content-Type, Authorization",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
 }

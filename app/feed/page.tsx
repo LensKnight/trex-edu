@@ -288,7 +288,7 @@ export default function FeedPage() {
 
     const fileName = `${note.title}.${displayExt}`;
 
-    const fileUrl = `${window.location.origin}/api/file-proxy?file_id=${encodeURIComponent(note.file_id)}`;
+    const fileUrl = `${window.location.origin}/api/file-proxy?file_id=${encodeURIComponent(note.file_id)}&ext=${encodeURIComponent(displayExt)}`;
 
     window.open(buildTrexViewLink(fileUrl, fileName, viewerType), "_blank");
   };
