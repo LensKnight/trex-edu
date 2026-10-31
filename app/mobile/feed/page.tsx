@@ -210,29 +210,20 @@ export default function MobileFeedPage() {
     if (data) setReportedNotes(data.map((d) => d.note_id));
   }
 
-  const openNote = async (note: Note) => {
+  const openNote = (note: Note) => {
     if (!note.file_id) return alert("File not found");
 
-    try {
-      const res = await fetch(
-        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${note.file_id}`
-      );
-      const data = await res.json();
-      if (!data.ok) return alert("Cannot open file");
+    const fileType = (note.file_type || "").toLowerCase().replace(".", "");
+    const viewerType = IMAGE_EXTS.includes(fileType) ? "image" : "pdf";
 
-      const filePath: string = data.result.file_path;
-      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
+    const displayExt =
+      fileType || (viewerType === "image" ? "jpg" : "pdf");
 
-      const viewerTypeGuess = inferViewerType(filePath, note.file_type);
-      const pathExt = extFromFilePath(filePath);
-      const displayExt = pathExt || note.file_type || (viewerTypeGuess === "image" ? "jpg" : "pdf");
-      const fileName = `${note.title}.${displayExt}`;
+    const fileName = `${note.title}.${displayExt}`;
 
-      window.open(buildTrexViewLink(fileUrl, fileName, viewerTypeGuess), "_blank");
-    } catch (err) {
-      console.log(err);
-      alert("Open failed");
-    }
+    const fileUrl = `${window.location.origin}/api/file-proxy?file_id=${encodeURIComponent(note.file_id)}`;
+
+    window.open(buildTrexViewLink(fileUrl, fileName, viewerType), "_blank");
   };
 
   async function downloadNote(note: Note) {

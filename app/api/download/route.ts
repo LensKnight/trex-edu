@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "File ID is required" }, { status: 400 });
   }
 
-  const botToken = process.env.NEXT_PUBLIC_BOT_TOKEN;
+  const botToken = process.env.TELEGRAM_SECOND_BOT_TOKEN;
 
   if (!botToken) {
     return NextResponse.json({ error: "Bot token not configured" }, { status: 500 });

@@ -8,7 +8,7 @@ const supabase = createClient(
 );
 
 const TELEGRAM_BOT_TOKEN =
-  process.env.TELEGRAM_BOT_TOKEN!;
+  process.env.TELEGRAM_SECOND_BOT_TOKEN!;
 
 const TELEGRAM_CHAT_ID =
   process.env.TELEGRAM_LECTURE_CHAT_ID!;

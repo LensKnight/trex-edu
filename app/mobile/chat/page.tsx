@@ -319,44 +319,27 @@ export default function MobileChatPage() {
     if (!note.file_id) return alert("File not found");
     if (openingId === note.id) return;
 
-    // iOS Safari: window.open must run synchronously inside the tap,
-    // so open a blank tab first and fill it after the fetch
     const newTab = window.open("", "_blank");
-
-    const fail = (msg: string) => {
-      newTab?.close();
-      alert(msg);
-    };
 
     setOpeningId(note.id);
 
     try {
-      const res = await fetch(
-        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${note.file_id}`
-      );
-      const data = await res.json();
-      if (!data.ok) return fail("Cannot open file");
-
-      const filePath: string = data.result.file_path;
-      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
-
-      const viewerType = inferViewerType(filePath, note.file_type);
-      const pathExt = extFromFilePath(filePath);
-      const displayExt =
-        pathExt || note.file_type || (viewerType === "image" ? "jpg" : "pdf");
+      const fileType = (note.file_type || "").toLowerCase().replace(".", "");
+      const viewerType = IMAGE_EXTS.includes(fileType) ? "image" : "pdf";
+      const displayExt = fileType || (viewerType === "image" ? "jpg" : "pdf");
       const fileName = `${note.title}.${displayExt}`;
 
+      const fileUrl = `${window.location.origin}/api/file-proxy?file_id=${encodeURIComponent(note.file_id)}`;
       const link = buildTrexViewLink(fileUrl, fileName, viewerType);
 
       if (newTab) {
         newTab.location.href = link;
       } else {
-        // Popup still blocked (e.g. home-screen app): open in the same tab
         window.location.href = link;
       }
-    } catch (err) {
-      console.log(err);
-      fail("Open failed");
+    } catch {
+      newTab?.close();
+      alert("Open failed");
     } finally {
       setOpeningId(null);
     }

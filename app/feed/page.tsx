@@ -277,27 +277,20 @@ export default function FeedPage() {
     }
   }
 
-  const openNote = async (note: Note) => {
+  const openNote = (note: Note) => {
     if (!note.file_id) return alert("File not found");
-    try {
-      const res = await fetch(
-        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/getFile?file_id=${note.file_id}`
-      );
-      const data = await res.json();
-      if (!data.ok) return alert("Cannot open file");
 
-      const filePath: string = data.result.file_path;
-      const fileUrl = `https://api.telegram.org/file/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/${filePath}`;
+    const fileType = (note.file_type || "").toLowerCase().replace(".", "");
+    const viewerType = IMAGE_EXTS.includes(fileType) ? "image" : "pdf";
 
-      const viewerType = inferViewerType(filePath, note.file_type);
-      const pathExt = extFromFilePath(filePath);
-      const displayExt = pathExt || note.file_type || (viewerType === "image" ? "jpg" : "pdf");
-      const fileName = `${note.title}.${displayExt}`;
+    const displayExt =
+      fileType || (viewerType === "image" ? "jpg" : "pdf");
 
-      window.open(buildTrexViewLink(fileUrl, fileName, viewerType), "_blank");
-    } catch {
-      alert("Open failed");
-    }
+    const fileName = `${note.title}.${displayExt}`;
+
+    const fileUrl = `${window.location.origin}/api/file-proxy?file_id=${encodeURIComponent(note.file_id)}`;
+
+    window.open(buildTrexViewLink(fileUrl, fileName, viewerType), "_blank");
   };
 
   // UPDATED: Fixed CORS and Telegram File download via internal API proxy

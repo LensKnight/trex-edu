@@ -1,5 +1,5 @@
 
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_SECOND_BOT_TOKEN!;
 
 export async function GET(req: Request) {
   try {

@@ -89,24 +89,31 @@ export default function MobileUploadPage() {
 
       const noteTitle = title.trim();
 
-      const form = new FormData();
-      form.append("chat_id", "-1003724740509");
-      form.append("document", file);
-      form.append(
-        "caption",
-        `📚 New Note Uploaded!\n\n📌 Title: ${noteTitle}\n📘 Subject: ${subject}\n🏷️ Category: ${category}`
-      );
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Session expired. Please log in again!");
 
-      const tgRes = await fetch(
-        `https://api.telegram.org/bot${process.env.NEXT_PUBLIC_BOT_TOKEN}/sendDocument`,
-        { method: "POST", body: form }
-      );
-      const tgData = await tgRes.json();
-      if (!tgData.ok) {
-        throw new Error(tgData.description || "Telegram upload failed");
+      const form = new FormData();
+      form.append("file", file);
+      form.append("title", noteTitle);
+      form.append("subject", subject);
+      form.append("category", category);
+
+      const uploadRes = await fetch("/api/upload-note", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: form,
+      });
+
+      const uploadData = await uploadRes.json();
+
+      if (!uploadRes.ok) {
+        throw new Error(uploadData.error || "Upload failed");
       }
 
-      const file_id = tgData?.result?.document?.file_id || null;
+      const file_id = uploadData.file_id;
+      const file_type = uploadData.file_type;
 
       const { error: dbError } = await supabase.from("notes").insert([
         {
@@ -117,8 +124,10 @@ export default function MobileUploadPage() {
           class_name: profile?.class_name,
           section: profile?.section,
           file_id,
+          file_type,
         },
       ]);
+
       if (dbError) throw dbError;
 
       const { data: profileData } = await supabase
